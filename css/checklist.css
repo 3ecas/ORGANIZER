@@ -1,0 +1,81 @@
+/* ============================================================
+   checklist.css — the list of steps inside a card
+   ============================================================ */
+
+.cl{display:flex;flex-direction:column;gap:8px}
+
+/* ---------- progress header ---------- */
+.cl-top{display:flex;align-items:center;gap:8px}
+.cl-count{
+  font-size:11px;font-weight:650;color:var(--muted);
+  font-variant-numeric:tabular-nums;flex:0 0 auto;
+}
+.cl-count.all{color:var(--ok)}
+
+.cl-bar{
+  flex:1;height:4px;border-radius:99px;background:var(--line);overflow:hidden;
+}
+.cl-bar i{
+  display:block;height:100%;border-radius:99px;
+  background:var(--accent);transition:width .22s,background .22s;
+}
+.cl-bar i.all{background:var(--ok)}
+
+.cl-clear{
+  flex:0 0 auto;font-size:10.5px;color:var(--faint);
+  padding:2px 6px;border-radius:5px;transition:background .12s,color .12s;
+}
+.cl-clear:hover{background:var(--panel-3);color:var(--danger)}
+
+/* ---------- the rows ---------- */
+.cl-items{display:flex;flex-direction:column;gap:1px;margin:0 -4px}
+.cl-items:empty{display:none}
+
+.cl-item{
+  display:flex;align-items:center;gap:7px;
+  padding:4px 5px;border-radius:6px;
+  transition:background .12s;position:relative;
+}
+.cl-item:hover{background:var(--panel-2)}
+.cl-item.dragging{opacity:.35}
+.cl-item.over::before{
+  content:"";position:absolute;left:6px;right:6px;top:-1px;
+  height:2px;border-radius:99px;background:var(--accent);
+}
+
+.cl-grip{
+  flex:0 0 10px;width:10px;cursor:grab;
+  color:var(--faint);opacity:0;
+  font-size:11px;line-height:1;letter-spacing:-1px;
+  transition:opacity .12s;user-select:none;
+}
+.cl-item:hover .cl-grip{opacity:.6}
+.cl-grip:active{cursor:grabbing}
+
+.cl-text{
+  flex:1;min-width:0;background:none;border:none;outline:none;
+  font-size:12.5px;line-height:1.4;padding:2px 4px;border-radius:5px;
+  color:var(--text);
+}
+.cl-text:focus{background:var(--panel-3)}
+.cl-item.on .cl-text{color:var(--faint);text-decoration:line-through}
+
+.cl-del{
+  flex:0 0 auto;color:var(--faint);font-size:14px;line-height:1;
+  padding:0 4px;border-radius:4px;opacity:0;transition:opacity .12s,color .12s;
+}
+.cl-item:hover .cl-del{opacity:1}
+.cl-del:hover{color:var(--danger)}
+
+/* ---------- add box ---------- */
+.cl-add{
+  width:100%;background:var(--panel-2);border:1px dashed var(--line-2);
+  border-radius:var(--r-sm);padding:7px 10px;outline:none;font-size:12.5px;
+  transition:border-color .12s,background .12s;
+}
+.cl-add::placeholder{color:var(--faint)}
+.cl-add:focus{border-style:solid;border-color:var(--accent);background:var(--panel-3)}
+
+/* ---------- the "3/6" pill used on cards and in the sidebar ---------- */
+.pill.steps{background:var(--panel-3);color:var(--muted);font-variant-numeric:tabular-nums}
+.pill.steps.all{background:rgba(70,192,127,.16);color:var(--ok)}

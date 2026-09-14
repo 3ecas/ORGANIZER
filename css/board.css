@@ -1,0 +1,172 @@
+/* ============================================================
+   board.css — Trello-style lists of cards.
+   Same tasks as the calendar, arranged by workflow stage.
+   ============================================================ */
+
+.board{
+  flex:1;min-height:0;display:flex;gap:12px;
+  padding:14px;overflow-x:auto;overflow-y:hidden;align-items:flex-start;
+}
+
+/* ---------- a list ---------- */
+.col{
+  flex:0 0 278px;width:278px;max-height:100%;
+  display:flex;flex-direction:column;min-height:0;
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
+}
+.col.is-done{background:var(--panel-2)}
+.col.lifted{opacity:.4}                 /* the list currently being dragged */
+
+/* the header doubles as the handle for dragging the whole list sideways */
+.col-head{
+  flex:0 0 auto;display:flex;align-items:center;gap:5px;
+  padding:10px 10px 8px;cursor:grab;
+}
+.col-head:active{cursor:grabbing}
+.col-head .col-grip{
+  flex:0 0 auto;font-size:11px;line-height:1;letter-spacing:-1px;
+  color:var(--faint);opacity:0;transition:opacity .12s;
+}
+.col:hover .col-grip{opacity:.55}
+
+.col-head input{
+  flex:1;min-width:0;background:none;border:none;outline:none;cursor:text;
+  font-size:12px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--muted);padding:2px 4px;border-radius:5px;
+}
+.col-head input:focus{background:var(--panel-3);color:var(--text)}
+.col-head .n{
+  font-size:10px;font-weight:650;color:var(--faint);
+  background:var(--panel-3);padding:1px 6px;border-radius:99px;
+  font-variant-numeric:tabular-nums;flex:0 0 auto;
+}
+.col-head .kill{
+  width:20px;height:20px;border-radius:5px;display:grid;place-items:center;
+  color:var(--faint);font-size:15px;line-height:1;opacity:0;transition:opacity .12s,color .12s;
+}
+.col:hover .kill{opacity:1}
+.col-head .kill:hover{color:var(--danger);background:var(--panel-3)}
+
+/* ---------- the scrolling card area (this is the drop target) ---------- */
+.col-body{
+  flex:1;min-height:44px;overflow-y:auto;
+  padding:0 8px 4px;display:flex;flex-direction:column;gap:7px;
+}
+.col-body.dropping{background:var(--accent-fog)}
+
+.col-empty{
+  color:var(--faint);font-size:11px;text-align:center;
+  padding:14px 8px;line-height:1.5;
+}
+
+.col-add{
+  flex:0 0 auto;margin:4px 8px 8px;padding:7px 9px;
+  border-radius:var(--r-sm);border:1px dashed var(--line-2);
+  color:var(--faint);font-size:11.5px;text-align:left;
+  transition:background .12s,color .12s,border-color .12s;
+}
+.col-add:hover{background:var(--panel-2);color:var(--text);border-color:var(--accent)}
+
+/* ---------- add-a-list button ---------- */
+.col-new{
+  flex:0 0 278px;width:278px;
+  padding:11px;border-radius:var(--r);
+  border:1px dashed var(--line-2);background:transparent;
+  color:var(--faint);font-size:12px;font-weight:550;text-align:left;
+  transition:background .12s,color .12s,border-color .12s;
+}
+.col-new:hover{background:var(--panel);color:var(--text);border-color:var(--accent)}
+
+/* ============================================================
+   CARD
+   ============================================================ */
+.card{
+  position:relative;flex:0 0 auto;cursor:grab;overflow:hidden;
+  background:var(--panel-2);border:1px solid var(--line);
+  border-radius:9px;
+  transition:border-color .12s,background .12s,transform .1s;
+}
+.card:hover{background:var(--panel-3);border-color:var(--line-2)}
+.card:active{cursor:grabbing}
+.card.done{opacity:.5}
+.card.done .card-title{text-decoration:line-through}
+
+/* image cover, when the first attachment is a picture */
+.card-cover{
+  display:block;width:100%;height:104px;object-fit:cover;
+  background:var(--panel-3);border-bottom:1px solid var(--line);
+}
+
+.card-bar{height:3px;width:100%}
+
+.card-body{padding:8px 9px 9px;display:flex;flex-direction:column;gap:6px}
+
+.card-top{display:flex;align-items:flex-start;gap:7px}
+.card-names{flex:1;min-width:0}
+.card-title{
+  font-size:12.5px;font-weight:500;
+  line-height:1.35;word-break:break-word;
+}
+.card-sub{
+  font-size:11px;line-height:1.35;color:var(--faint);
+  margin-top:1px;word-break:break-word;
+}
+.card.done .card-sub{text-decoration:line-through}
+
+/* ---------- the task list, right on the card ---------- */
+.card-steps{display:flex;flex-direction:column;gap:5px}
+
+.cs-top{display:flex;align-items:center;gap:7px}
+.cs-bar{flex:1;height:3px;border-radius:99px;background:var(--line);overflow:hidden}
+.cs-bar i{
+  display:block;height:100%;border-radius:99px;
+  background:var(--accent);transition:width .22s,background .22s;
+}
+.cs-bar i.all{background:var(--ok)}
+.cs-count{
+  flex:0 0 auto;font-size:10px;font-weight:650;color:var(--faint);
+  font-variant-numeric:tabular-nums;
+}
+.cs-count.all{color:var(--ok)}
+
+.cs-items{display:flex;flex-direction:column;gap:1px;margin:0 -3px}
+.cs-item{
+  display:flex;align-items:flex-start;gap:6px;
+  padding:2px 3px;border-radius:5px;transition:background .12s;
+}
+.cs-item:hover{background:var(--panel)}
+
+/* a smaller box than the card's own completion tick, so the two don't
+   compete — this one is a step, not the whole job */
+.check.cs-check{flex:0 0 12px;width:12px;height:12px;border-radius:3.5px;margin-top:1px}
+.check.cs-check svg{width:8px;height:8px;stroke-width:3}
+
+.cs-text{
+  flex:1;min-width:0;font-size:11.5px;line-height:1.35;
+  color:var(--muted);word-break:break-word;
+}
+.cs-item.on .cs-text{color:var(--faint);text-decoration:line-through}
+
+.cs-more{font-size:10.5px;color:var(--faint);padding-left:3px}
+
+.card.done .card-steps{opacity:.7}
+
+.card-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.card-meta:empty{display:none}
+
+/* the "sits on the calendar at…" chip */
+.pill.when{
+  background:var(--panel-3);color:var(--muted);
+  font-variant-numeric:tabular-nums;
+}
+.pill.files{background:var(--panel-3);color:var(--muted)}
+
+/* ---------- insertion line while dragging ----------
+   Horizontal between cards, vertical between lists: dnd.js sets both
+   width and height inline for whichever it's drawing. */
+#dropline{
+  position:fixed;border-radius:99px;background:var(--accent);
+  z-index:998;pointer-events:none;opacity:0;transition:opacity .1s;
+  box-shadow:0 0 8px var(--accent);
+}
+#dropline.on{opacity:1}

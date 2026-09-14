@@ -1,0 +1,86 @@
+/* ============================================================
+   tokens.css — design variables, themes, reset
+   ============================================================ */
+
+:root{
+  /* surfaces */
+  --bg:#0d0e12;
+  --panel:#14161c;
+  --panel-2:#181b22;
+  --panel-3:#1e222b;
+  --line:#23272f;
+  --line-2:#2e333d;
+
+  /* type */
+  --text:#e8eaf0;
+  --muted:#868d9c;
+  --faint:#565d6c;
+
+  /* brand — the three accents are rewritten by app.js to match the
+     active space, so Work and Personal never look alike */
+  --accent:#8b7cf6;
+  --accent-soft:rgba(139,124,246,.30);   /* selection, dashed outlines */
+  --accent-fog:rgba(139,124,246,.08);    /* drop-target washes */
+  --danger:#ef5f5f;
+  --ok:#46c07f;
+  --warn:#e0b341;
+
+  /* depth */
+  --shadow:0 18px 48px rgba(0,0,0,.5);
+  --shadow-sm:0 2px 8px rgba(0,0,0,.3);
+
+  /* geometry */
+  --r:12px;
+  --r-sm:8px;
+  --hour:54px;        /* height of one hour row in the time grid */
+  --sidebar:264px;
+  --topbar:56px;
+}
+
+[data-theme="light"]{
+  --bg:#f3f4f7;
+  --panel:#ffffff;
+  --panel-2:#fbfbfd;
+  --panel-3:#f1f2f6;
+  --line:#e5e7ec;
+  --line-2:#d6d9e0;
+
+  --text:#191c23;
+  --muted:#6c727f;
+  --faint:#9ba1ad;
+
+  --shadow:0 18px 48px rgba(20,24,38,.16);
+  --shadow-sm:0 2px 8px rgba(20,24,38,.07);
+}
+
+/* ---------- reset ---------- */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:ui-sans-serif,-apple-system,"SF Pro Text","Segoe UI",Inter,system-ui,sans-serif;
+  font-size:13px;
+  line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+  overflow:hidden;
+}
+
+button,input,textarea,select{font:inherit;color:inherit}
+button{background:none;border:none;cursor:pointer}
+img,video{display:block;max-width:100%}
+::selection{background:var(--accent-soft)}
+
+/* ---------- scrollbars ---------- */
+*::-webkit-scrollbar{width:10px;height:10px}
+*::-webkit-scrollbar-track{background:transparent}
+*::-webkit-scrollbar-thumb{
+  background:var(--line-2);border-radius:99px;
+  border:3px solid transparent;background-clip:padding-box;
+}
+*::-webkit-scrollbar-thumb:hover{background:var(--faint);border:3px solid transparent;background-clip:padding-box}
+
+/* ---------- theme-aware native controls ---------- */
+[data-theme="dark"] input[type="date"],
+[data-theme="dark"] input[type="time"]{color-scheme:dark}

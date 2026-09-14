@@ -1,0 +1,124 @@
+/* ============================================================
+   labels.css — the client label: a name with one to three colours
+
+   The stripe itself is painted from JS (ui/labels.js builds a
+   hard-edged gradient), so everything here is shape and spacing.
+   ============================================================ */
+
+/* ---------- the dropdown inside a card ----------
+   Closed, the card shows only the colour and the client's name. The menu
+   expands inline rather than floating: the left pane scrolls, and a
+   floating menu would get clipped by it. */
+.lb{display:flex;flex-direction:column;gap:4px}
+
+.lb-field{
+  display:flex;align-items:center;gap:8px;width:100%;
+  height:32px;padding:0 9px;
+  background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r-sm);
+  text-align:left;transition:border-color .12s,background .12s;
+}
+.lb-field:hover{background:var(--panel-3)}
+.lb-field.open{border-color:var(--accent);background:var(--panel-3)}
+.lb-field .lb-name{font-size:12.5px}
+.lb-caret{
+  flex:0 0 auto;color:var(--faint);font-size:9px;
+  transition:transform .15s;
+}
+.lb-field.open .lb-caret{transform:rotate(180deg)}
+
+.lb-menu{
+  display:flex;flex-direction:column;gap:2px;
+  max-height:264px;overflow-y:auto;
+  padding:4px;background:var(--panel-2);
+  border:1px solid var(--line-2);border-radius:var(--r-sm);
+  box-shadow:var(--shadow-sm);
+}
+
+.lb-row{border-radius:var(--r-sm);transition:background .12s}
+.lb-row.on{background:var(--panel-2)}
+
+.lb-head{
+  display:flex;align-items:center;gap:8px;
+  padding:5px 7px;border-radius:var(--r-sm);cursor:pointer;
+  transition:background .12s;
+}
+.lb-head:hover{background:var(--panel-3)}
+
+/* the ring matters most for the white and black swatches, which would
+   otherwise vanish into the panel behind them */
+.lb-swatch{
+  flex:0 0 14px;width:14px;height:14px;border-radius:5px;
+  box-shadow:inset 0 0 0 1px rgba(127,127,127,.45);
+}
+
+.lb-name{
+  flex:1;min-width:0;font-size:12.5px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.lb-row.on .lb-name{font-weight:600}
+.lb-tick{flex:0 0 auto;color:var(--accent);font-size:11px;font-weight:700}
+
+/* Always visible, not hover-only — it was hover-only at first, which hid
+   the fact that labels can be edited at all. */
+.lb-edit{
+  flex:0 0 auto;width:20px;height:20px;border-radius:5px;
+  display:grid;place-items:center;color:var(--faint);font-size:11px;
+  opacity:.55;transition:opacity .12s,color .12s,background .12s;
+}
+.lb-row:hover .lb-edit{opacity:1}
+.lb-edit:hover{color:var(--text);background:var(--panel-3)}
+.lb-edit.on{opacity:1;color:var(--accent);background:var(--panel-3)}
+
+.lb-add{
+  padding:6px 8px;border-radius:var(--r-sm);
+  border:1px dashed var(--line-2);color:var(--faint);
+  font-size:11.5px;text-align:left;
+  transition:background .12s,color .12s,border-color .12s;
+}
+.lb-add:hover{background:var(--panel-2);color:var(--text);border-color:var(--accent)}
+
+/* ---------- the inline editor for one label ---------- */
+.lb-editor{
+  display:flex;flex-direction:column;gap:7px;
+  padding:8px;margin:0 4px 5px;
+  background:var(--panel-3);border-radius:var(--r-sm);
+}
+
+.lb-input{
+  width:100%;height:28px;padding:0 9px;
+  background:var(--panel);border:1px solid var(--line-2);border-radius:6px;
+  outline:none;font-size:12.5px;
+}
+.lb-input:focus{border-color:var(--accent)}
+
+.lb-note{font-size:10px;color:var(--faint)}
+
+/* fits the card's pane and the narrower sidebar without a second rule */
+.lb-swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(20px,1fr));gap:4px}
+.lb-dot{
+  aspect-ratio:1;border-radius:6px;position:relative;
+  box-shadow:inset 0 0 0 1px rgba(127,127,127,.45);
+  transition:transform .12s;
+}
+.lb-dot:hover{transform:scale(1.14)}
+/* a ring rather than a tick — the swatch colour has to stay readable */
+.lb-dot.on{box-shadow:0 0 0 2px var(--panel-3),0 0 0 3.5px var(--text)}
+
+/* name + delete share the top row of the editor */
+.lb-top{display:flex;align-items:center;gap:6px}
+.lb-top .lb-input{flex:1;min-width:0}
+
+.lb-del{
+  flex:0 0 28px;width:28px;height:28px;border-radius:6px;
+  display:grid;place-items:center;color:var(--faint);
+  background:var(--panel);border:1px solid var(--line-2);
+  transition:background .12s,color .12s,border-color .12s;
+}
+.lb-del svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.7}
+.lb-del:hover{color:var(--danger);border-color:var(--danger)}
+
+/* ---------- the same rows in the sidebar ---------- */
+.labels .lb-row{border-radius:6px}
+.labels .lb-row .label{padding-right:2px}
+.labels .lb-editor{margin:2px 0 6px;padding:8px 8px 9px}
+.labels .lb-add{width:100%;margin-top:4px}

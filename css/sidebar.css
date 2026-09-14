@@ -1,0 +1,93 @@
+/* ============================================================
+   sidebar.css — quick add, unscheduled list, labels, data footer
+   ============================================================ */
+
+.sidebar{
+  width:var(--sidebar);flex:0 0 var(--sidebar);
+  background:var(--panel);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;min-height:0;
+}
+
+.sb-section{padding:12px 12px 10px;border-bottom:1px solid var(--line)}
+.sb-section.grow{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+
+.sb-head{
+  display:flex;align-items:center;gap:6px;margin-bottom:9px;user-select:none;
+  font-size:10px;font-weight:650;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);
+}
+.sb-head .count{
+  margin-left:auto;background:var(--panel-3);color:var(--muted);
+  padding:1px 6px;border-radius:99px;font-size:10px;letter-spacing:0;font-weight:600;
+}
+.sb-head .note{
+  margin-left:auto;font-weight:500;letter-spacing:0;text-transform:none;font-size:10px;
+}
+
+#quickadd{
+  width:100%;height:32px;padding:0 10px;
+  background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r-sm);
+  outline:none;font-size:12.5px;transition:border-color .12s,background .12s;
+}
+#quickadd::placeholder{color:var(--faint)}
+#quickadd:focus{border-color:var(--accent);background:var(--panel-3)}
+.hint{font-size:10.5px;color:var(--faint);margin-top:7px;line-height:1.5}
+
+/* ---------- unscheduled list ---------- */
+#inbox{
+  flex:1;overflow-y:auto;margin:0 -4px;padding:0 4px 8px;
+  display:flex;flex-direction:column;gap:4px;
+}
+#inbox.dropping{
+  background:var(--accent-fog);border-radius:var(--r-sm);
+  outline:1px dashed var(--accent-soft);
+}
+
+.item{
+  display:flex;align-items:flex-start;gap:8px;position:relative;
+  padding:7px 9px;border-radius:var(--r-sm);
+  background:var(--panel-2);border:1px solid var(--line);
+  cursor:grab;transition:background .12s,border-color .12s;
+}
+.item:hover{background:var(--panel-3);border-color:var(--line-2)}
+.item:active{cursor:grabbing}
+.item .bar{position:absolute;left:0;top:6px;bottom:6px;width:2.5px;border-radius:99px}
+.item .txt{flex:1;min-width:0;padding-left:5px}
+.item .t{font-size:12.5px;font-weight:500;word-break:break-word;line-height:1.35}
+.item .s{font-size:11px;color:var(--faint);line-height:1.3;margin-top:1px;word-break:break-word}
+.item.done .s{text-decoration:line-through}
+.item .m{
+  font-size:10.5px;color:var(--faint);margin-top:3px;
+  display:flex;align-items:center;gap:5px;flex-wrap:wrap;
+}
+.item.done .t{text-decoration:line-through;color:var(--faint)}
+
+/* ---------- labels ---------- */
+/* capped so a long client list can't squeeze the Unscheduled pile to
+   nothing — it scrolls instead */
+.labels{display:flex;flex-direction:column;gap:1px;max-height:40vh;overflow-y:auto;margin:0 -3px;padding:0 3px}
+.label{
+  display:flex;align-items:center;gap:8px;padding:4px 7px;
+  border-radius:6px;cursor:pointer;transition:background .12s;
+}
+.label:hover{background:var(--panel-2)}
+.label.off{opacity:.34}
+.label .swatch{width:10px;height:10px;border-radius:3.5px;flex:0 0 10px;box-shadow:inset 0 0 0 1px rgba(127,127,127,.45)}
+.label input{
+  flex:1;min-width:0;background:none;border:none;outline:none;
+  font-size:12px;padding:1px 3px;border-radius:4px;
+}
+.label input:focus{background:var(--panel-3)}
+.label .n{font-size:10px;color:var(--faint);font-variant-numeric:tabular-nums}
+
+/* ---------- footer ---------- */
+.sb-foot{padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.sb-foot .toggle{padding:6px 9px;font-size:12px}
+.row{display:flex;gap:6px}
+.row .btn{flex:1;justify-content:center}
+
+.saved{
+  font-size:10px;color:var(--faint);text-align:center;
+  display:flex;align-items:center;justify-content:center;gap:5px;
+}
+.saved .pip{width:5px;height:5px;border-radius:99px;background:var(--ok);transition:background .3s}
+.saved.warn .pip{background:var(--warn)}

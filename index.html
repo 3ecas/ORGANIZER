@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Organizer</title>
+
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/spaces.css">
+<link rel="stylesheet" href="css/sidebar.css">
+<link rel="stylesheet" href="css/calendar.css">
+<link rel="stylesheet" href="css/board.css">
+<link rel="stylesheet" href="css/editor.css">
+<link rel="stylesheet" href="css/checklist.css">
+<link rel="stylesheet" href="css/labels.css">
+<link rel="stylesheet" href="css/hover.css">
+</head>
+
+<body>
+
+<div id="app">
+
+  <!-- shown only when the app isn't talking to server.py -->
+  <div class="banner" id="filebanner" hidden>
+    <b>Not connected to the ORGANIZER folder.</b>
+    <span>Your work is being kept inside the browser instead, and imported files won't be
+    copied to <code>files/</code>. Quit and double-click <code>start.command</code>.</span>
+    <button class="x" id="banner-x" title="Dismiss">&times;</button>
+  </div>
+
+  <!-- ============================================================ TOPBAR -->
+  <header class="topbar">
+    <div class="wordmark"><span class="dot"></span>Organizer</div>
+
+    <div class="nav">
+      <button class="iconbtn" id="prev" title="Previous  (←)">
+        <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <button class="iconbtn" id="next" title="Next  (→)">
+        <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+    </div>
+    <button class="btn" id="today" title="Jump to today  (T)">Today</button>
+
+    <div class="period" id="period"></div>
+
+    <div class="spacer"></div>
+
+    <!-- live stopwatch, appears only while a timer runs -->
+    <div id="timerpill">
+      <span class="rec"></span>
+      <span class="tp-name"></span>
+      <span class="tp-time">0:00</span>
+      <button class="tp-stop" title="Stop and log">
+        <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+      </button>
+    </div>
+
+    <div class="searchwrap">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="search" placeholder="Search…" autocomplete="off" spellcheck="false" title="Search  (/)">
+    </div>
+
+    <button class="btn" id="boardbtn" title="Board  (5)">
+      <svg viewBox="0 0 24 24"><path d="M4 5h5v14H4zM15 5h5v9h-5z"/></svg>Board
+    </button>
+
+    <div class="segmented" id="views">
+      <button data-view="day">Day</button>
+      <button data-view="week">Week</button>
+      <button data-view="month">Month</button>
+      <button data-view="year">Year</button>
+    </div>
+
+    <button class="btn primary" id="newtask" title="New task  (N)">
+      <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New
+    </button>
+
+    <button class="iconbtn" id="theme" title="Light / dark">
+      <svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>
+    </button>
+  </header>
+
+  <div class="body">
+
+    <!-- ========================================================== SIDEBAR -->
+    <aside class="sidebar">
+
+      <!-- two separate work areas; nothing crosses between them -->
+      <div class="sb-section sb-spaces">
+        <div class="spaces" id="spaces" title="Switch work area  (S)"></div>
+      </div>
+
+      <div class="sb-section">
+        <input id="quickadd" placeholder="Add a task…  (A)" autocomplete="off" spellcheck="false">
+        <div class="hint">Lands in <b>Unscheduled</b>, in the space you're in.
+        Drag it onto the calendar once you know when.</div>
+      </div>
+
+      <div class="sb-section grow">
+        <div class="sb-head">Unscheduled <span class="count" id="inbox-count">0</span></div>
+        <div id="inbox" data-drop="inbox"></div>
+      </div>
+
+      <div class="sb-section">
+        <div class="sb-head">Clients &amp; labels <span class="note">click to filter</span></div>
+        <div class="labels" id="labels"></div>
+      </div>
+
+      <div class="sb-foot">
+        <div class="toggle" id="hidedone">Hide completed <span class="track"></span></div>
+        <div class="row">
+          <button class="btn" id="export" title="Save a backup file including every attachment  (⌘S)">
+            <svg viewBox="0 0 24 24"><path d="M12 3v12M8 11l4 4 4-4M4 20h16"/></svg>Export
+          </button>
+          <button class="btn" id="import" title="Restore from a backup file">
+            <svg viewBox="0 0 24 24"><path d="M12 16V4M8 8l4-4 4 4M4 20h16"/></svg>Import
+          </button>
+        </div>
+        <div class="saved" id="saved"><span class="pip"></span><span id="saved-txt">Saved on this Mac</span></div>
+      </div>
+
+    </aside>
+
+    <!-- ============================================================= MAIN -->
+    <main class="main" id="main"></main>
+
+  </div>
+</div>
+
+
+<!-- ============================================================== EDITOR -->
+<div class="scrim" id="scrim"></div>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="Task">
+
+  <div class="modal-head">
+    <span class="mh-dot" id="m-dot"></span>
+    <div class="mh-names">
+      <input class="mh-title" id="m-title" placeholder="Untitled task" autocomplete="off">
+      <input class="mh-sub" id="m-subtitle" placeholder="Subtitle — which cut, which client…" autocomplete="off">
+    </div>
+    <button class="iconbtn" id="m-dup" title="Duplicate">
+      <svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>
+    </button>
+    <button class="iconbtn danger" id="m-del" title="Delete">
+      <svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>
+    </button>
+    <button class="iconbtn" id="m-close" title="Close  (Esc)">
+      <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+
+  <div class="modal-body">
+
+    <!-- ------------------------------------------- LEFT: information -->
+    <section class="pane pane-left" id="pane-left">
+
+      <div class="toggle" id="m-done">Completed <span class="track"></span></div>
+
+      <div class="grid2">
+        <div class="field">
+          <label>Space</label>
+          <select class="input" id="m-space"></select>
+        </div>
+        <div class="field">
+          <label>Board list</label>
+          <select class="input" id="m-list"></select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Client / label</label>
+        <div class="lb" id="m-labels"></div>
+      </div>
+
+      <div class="field">
+        <label>Task list</label>
+        <div class="cl" id="m-steps"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="toggle" id="m-sched">On the calendar <span class="track"></span></div>
+
+      <div id="m-schedfields" style="display:flex;flex-direction:column;gap:14px">
+        <div class="field">
+          <label>Scheduled for</label>
+          <input type="date" class="input" id="m-date">
+        </div>
+
+        <div class="toggle" id="m-allday">All day / no fixed time <span class="track"></span></div>
+
+        <div class="grid2" id="m-timefields">
+          <div class="field">
+            <label>Start</label>
+            <input type="time" class="input" id="m-start" step="300">
+          </div>
+          <div class="field">
+            <label>End</label>
+            <input type="time" class="input" id="m-end" step="300">
+          </div>
+        </div>
+
+        <!-- only for all-day work: a job that runs across several days -->
+        <div class="field" id="m-spanfield">
+          <label>Last day</label>
+          <div class="withclear">
+            <input type="date" class="input" id="m-until"
+                   title="For a job that runs across several days. Leave empty for a single day.">
+            <button class="btn" id="m-untilclear" title="Just the one day">&times;</button>
+          </div>
+          <div class="hint" id="m-spannote"></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Due date</label>
+        <div class="withclear">
+          <input type="date" class="input" id="m-due">
+          <button class="btn" id="m-dueclear" title="Clear the deadline">&times;</button>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- time tracking -->
+      <div class="tt">
+        <div class="tt-top">
+          <div class="tt-total" id="m-tt-total">0m</div>
+          <div class="tt-of" id="m-tt-of">logged</div>
+        </div>
+
+        <div class="tt-actions">
+          <button class="btn" id="m-tt-toggle">
+            <svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg>Start
+          </button>
+          <span id="m-tt-quick" style="display:flex;gap:5px">
+            <button class="btn sm" data-min="15">+15m</button>
+            <button class="btn sm" data-min="30">+30m</button>
+            <button class="btn sm" data-min="60">+1h</button>
+          </span>
+        </div>
+
+        <div class="tt-list" id="m-tt-list"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="field">
+        <label>Notes</label>
+        <textarea class="input" id="m-notes" placeholder="Brief, references, feedback, deliverables…"></textarea>
+      </div>
+
+    </section>
+
+    <!-- ----------------------------------------------- RIGHT: files -->
+    <section class="pane pane-right" id="pane-right">
+
+      <div class="files-head">
+        <span class="ft">Files</span>
+        <span class="fsize" id="m-filecount">No files</span>
+        <span class="fsize" id="m-filesize"></span>
+        <div class="spacer"></div>
+        <button class="btn sm" id="m-addfiles">
+          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Attach
+        </button>
+      </div>
+
+      <div class="filestrip" id="filestrip"></div>
+      <div class="preview" id="preview"></div>
+      <div class="dropveil" id="dropveil">Drop to attach</div>
+
+    </section>
+
+  </div>
+</div>
+
+
+<!-- =============================================================== MISC -->
+<div id="ghost"></div>
+<div id="dropline"></div>
+<div class="toast" id="toast"></div>
+<input type="file" id="filein" multiple hidden>
+<input type="file" id="backupin" accept=".organizer,.json,application/json" hidden>
+
+
+<!-- ============================================================ SCRIPTS
+     Plain <script src> rather than ES modules on purpose: modules are
+     blocked when a page is opened as file://, and this app has to keep
+     working either way. Load order is dependency order.
+     ================================================================== -->
+<script src="js/core/util.js"></script>
+<script src="js/core/palette.js"></script>
+<script src="js/core/spaces.js"></script>
+<script src="js/core/files.js"></script>
+<script src="js/core/store.js"></script>
+<script src="js/core/backup.js"></script>
+
+<script src="js/views/grid.js"></script>
+
+<script src="js/ui/dnd.js"></script>
+<script src="js/ui/chips.js"></script>
+<script src="js/ui/timer.js"></script>
+<script src="js/ui/labels.js"></script>
+<script src="js/ui/preview.js"></script>
+<script src="js/ui/hover.js"></script>
+<script src="js/ui/checklist.js"></script>
+<script src="js/ui/editor.js"></script>
+<script src="js/ui/spaceswitch.js"></script>
+<script src="js/ui/sidebar.js"></script>
+
+<script src="js/views/day-week.js"></script>
+<script src="js/views/month.js"></script>
+<script src="js/views/year.js"></script>
+<script src="js/views/board.js"></script>
+
+<script src="js/app.js"></script>
+</body>
+</html>

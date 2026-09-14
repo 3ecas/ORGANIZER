@@ -1,0 +1,52 @@
+/* ============================================================
+   spaces.css — the Work / Personal switch at the top of the sidebar
+
+   The whole app's --accent is swapped to the active space's colour
+   from app.js, so the switch is only half the signal: the wordmark
+   dot, focus rings and the Board button all change with it.
+   ============================================================ */
+
+.sb-spaces{padding:10px 10px 9px}
+
+.spaces{
+  display:grid;grid-template-columns:1fr 1fr;gap:3px;
+  padding:3px;background:var(--panel-3);border-radius:10px;
+}
+
+.space{
+  display:flex;align-items:center;gap:6px;
+  height:28px;padding:0 8px;border-radius:7px;
+  font-size:12px;font-weight:550;color:var(--muted);
+  min-width:0;transition:background .14s,color .14s,box-shadow .14s;
+}
+.space:hover{color:var(--text)}
+
+.space.on{
+  background:var(--panel);color:var(--text);
+  box-shadow:var(--shadow-sm);
+}
+
+.space .dot{
+  width:7px;height:7px;border-radius:2.5px;flex:0 0 7px;
+  opacity:.4;transition:opacity .14s,box-shadow .14s;
+}
+.space.on .dot{opacity:1;box-shadow:0 0 8px var(--space-accent)}
+
+.space .nm{
+  flex:1;min-width:0;text-align:left;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+
+.space .n{
+  font-size:10px;font-variant-numeric:tabular-nums;color:var(--faint);
+  flex:0 0 auto;
+}
+.space.on .n{color:var(--muted)}
+
+/* while searching, the number means "matches in here" — worth noticing
+   on the space you're NOT in, which is the whole point of showing it */
+.space .n.hit{
+  background:var(--space-accent);color:#fff;
+  padding:1px 5px;border-radius:99px;font-weight:650;
+}
+.space .n.hit.zero{background:none;color:var(--faint);font-weight:400;padding:0}

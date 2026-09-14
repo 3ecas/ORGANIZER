@@ -1,0 +1,195 @@
+/* ============================================================
+   editor.css — two-pane task modal
+   LEFT  = all information (scheduling, due date, hours, notes)
+   RIGHT = attached files + large preview
+   ============================================================ */
+
+.scrim{
+  position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(2px);
+  opacity:0;pointer-events:none;transition:opacity .18s;z-index:40;
+}
+.scrim.on{opacity:1;pointer-events:auto}
+
+.modal{
+  position:fixed;top:50%;left:50%;z-index:50;
+  width:min(1180px,94vw);height:min(770px,90vh);
+  transform:translate(-50%,-46%) scale(.985);
+  background:var(--panel);border:1px solid var(--line-2);border-radius:16px;
+  box-shadow:var(--shadow);display:flex;flex-direction:column;overflow:hidden;
+  opacity:0;pointer-events:none;
+  transition:opacity .18s,transform .2s cubic-bezier(.32,.72,0,1);
+}
+.modal.on{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+
+/* ---------- head ---------- */
+.modal-head{
+  flex:0 0 auto;display:flex;align-items:center;gap:9px;
+  padding:11px 12px 11px 14px;border-bottom:1px solid var(--line);
+}
+/* the open card's label, as a small vertical stripe beside the title */
+.mh-dot{width:4px;align-self:stretch;min-height:30px;border-radius:99px;flex:0 0 4px;margin:2px 3px 2px 0}
+.mh-names{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.mh-title{
+  width:100%;background:none;border:none;outline:none;
+  font-size:17px;font-weight:620;letter-spacing:-.01em;padding:2px 4px;border-radius:6px;
+}
+.mh-title::placeholder{color:var(--faint)}
+.mh-title:focus{background:var(--panel-2)}
+
+/* the second line: which cut, which client, which deliverable */
+.mh-sub{
+  width:100%;background:none;border:none;outline:none;
+  font-size:12px;color:var(--muted);padding:2px 5px;border-radius:6px;
+}
+.mh-sub::placeholder{color:var(--faint)}
+.mh-sub:focus{background:var(--panel-2);color:var(--text)}
+
+/* ---------- body: two panes ---------- */
+.modal-body{flex:1;display:flex;min-height:0}
+
+.pane{min-height:0;display:flex;flex-direction:column}
+.pane-left{
+  flex:0 0 380px;width:380px;overflow-y:auto;
+  padding:16px;gap:14px;border-right:1px solid var(--line);
+}
+.pane-right{flex:1;min-width:0;position:relative;background:var(--panel-2)}
+
+@media (max-width:900px){
+  .modal-body{flex-direction:column}
+  .pane-left{flex:0 0 auto;width:auto;border-right:none;border-bottom:1px solid var(--line);max-height:50%}
+}
+
+/* ============================================================
+   LEFT PANE — time tracking block
+   ============================================================ */
+.tt{
+  background:var(--panel-2);border:1px solid var(--line);
+  border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:10px;
+}
+.tt-top{display:flex;align-items:flex-end;gap:10px}
+.tt-total{
+  font-size:26px;font-weight:650;letter-spacing:-.03em;line-height:1;
+  font-variant-numeric:tabular-nums;
+}
+.tt-total.live{color:var(--danger)}
+.tt-of{font-size:11px;color:var(--faint);padding-bottom:3px}
+.tt-actions{display:flex;gap:5px;flex-wrap:wrap}
+.tt-actions .btn{flex:0 0 auto}
+
+.tt-list{display:flex;flex-direction:column;gap:1px;max-height:150px;overflow-y:auto;margin:0 -4px}
+.tt-entry{
+  display:flex;align-items:center;gap:8px;padding:4px 6px;
+  border-radius:5px;font-size:11.5px;transition:background .12s;
+}
+.tt-entry:hover{background:var(--panel-3)}
+.tt-entry .e-min{font-weight:620;font-variant-numeric:tabular-nums;flex:0 0 auto;min-width:46px}
+.tt-entry .e-when{color:var(--faint);font-size:10.5px;flex:0 0 auto}
+.tt-entry .e-note{
+  flex:1;min-width:0;color:var(--muted);overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;
+}
+.tt-entry .e-del{opacity:0;color:var(--faint);font-size:14px;line-height:1;padding:0 3px}
+.tt-entry:hover .e-del{opacity:1}
+.tt-entry .e-del:hover{color:var(--danger)}
+
+/* due-date row with a clear button */
+.withclear{display:flex;gap:6px}
+.withclear .input{flex:1}
+
+/* ============================================================
+   RIGHT PANE — files
+   ============================================================ */
+.files-head{
+  flex:0 0 auto;display:flex;align-items:center;gap:9px;
+  padding:11px 14px;border-bottom:1px solid var(--line);
+}
+.files-head .ft{
+  font-size:10px;font-weight:650;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--faint);
+}
+.files-head .fsize{font-size:10.5px;color:var(--faint);font-variant-numeric:tabular-nums}
+
+/* horizontal thumbnail strip */
+.filestrip{
+  flex:0 0 auto;display:flex;gap:8px;padding:11px 14px;overflow-x:auto;
+  border-bottom:1px solid var(--line);min-height:84px;align-items:flex-start;
+}
+.filestrip:empty{display:none}
+
+.fthumb{
+  flex:0 0 auto;width:72px;cursor:pointer;position:relative;
+  display:flex;flex-direction:column;gap:4px;
+}
+.fthumb .box{
+  width:72px;height:54px;border-radius:7px;overflow:hidden;
+  background:var(--panel-3);border:1.5px solid var(--line);
+  display:grid;place-items:center;transition:border-color .12s;
+}
+.fthumb:hover .box{border-color:var(--line-2)}
+.fthumb.on .box{border-color:var(--accent)}
+.fthumb .box img,.fthumb .box video{width:100%;height:100%;object-fit:cover}
+.fthumb .box .ext{
+  font-size:9.5px;font-weight:700;letter-spacing:.04em;color:var(--muted);
+  text-transform:uppercase;
+}
+.fthumb .nm{
+  font-size:9.5px;color:var(--muted);line-height:1.25;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.fthumb.on .nm{color:var(--text)}
+.fthumb .rm{
+  position:absolute;top:-5px;right:-5px;width:17px;height:17px;border-radius:99px;
+  background:var(--danger);color:#fff;display:grid;place-items:center;
+  font-size:12px;line-height:1;opacity:0;transition:opacity .12s;
+}
+.fthumb:hover .rm{opacity:1}
+
+/* large preview area */
+.preview{
+  flex:1;min-height:0;position:relative;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:16px;gap:12px;overflow:auto;
+}
+.preview img,.preview video{
+  max-width:100%;max-height:100%;object-fit:contain;
+  border-radius:8px;box-shadow:var(--shadow-sm);
+}
+.preview iframe{width:100%;height:100%;border:none;border-radius:8px;background:#fff}
+.preview pre{
+  width:100%;height:100%;overflow:auto;margin:0;
+  background:var(--panel-3);border:1px solid var(--line);border-radius:8px;padding:14px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;
+  line-height:1.65;white-space:pre-wrap;word-break:break-word;color:var(--muted);
+}
+.preview audio{width:min(420px,100%)}
+
+.pv-meta{
+  flex:0 0 auto;display:flex;align-items:center;gap:10px;
+  font-size:11px;color:var(--faint);max-width:100%;
+}
+.pv-meta .nm{color:var(--text);font-weight:550;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.pv-generic{
+  display:flex;flex-direction:column;align-items:center;gap:10px;color:var(--muted);
+}
+.pv-generic .big{
+  width:88px;height:88px;border-radius:16px;background:var(--panel-3);
+  border:1px solid var(--line);display:grid;place-items:center;
+  font-size:16px;font-weight:750;letter-spacing:.04em;color:var(--faint);text-transform:uppercase;
+}
+
+.pv-empty{
+  display:flex;flex-direction:column;align-items:center;gap:12px;
+  color:var(--faint);text-align:center;font-size:12px;line-height:1.6;
+}
+.pv-empty svg{width:34px;height:34px;stroke:currentColor;fill:none;stroke-width:1.4;opacity:.5}
+
+/* drop veil covering the whole right pane while dragging files in */
+.dropveil{
+  position:absolute;inset:8px;border-radius:12px;z-index:6;
+  border:2px dashed var(--accent);background:var(--accent-fog);
+  display:grid;place-items:center;
+  font-size:13px;font-weight:600;color:var(--accent);
+  opacity:0;pointer-events:none;transition:opacity .14s;
+}
+.dropveil.on{opacity:1}

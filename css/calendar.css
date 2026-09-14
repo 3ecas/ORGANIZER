@@ -1,0 +1,251 @@
+/* ============================================================
+   calendar.css — day/week time grid, month grid, year overview
+   ============================================================ */
+
+/* ============================================================
+   DAY + WEEK (shared time grid)
+   ============================================================ */
+.tg{display:flex;flex-direction:column;height:100%;min-height:0}
+
+/* Sideways pan. A day with overlapping blocks takes a wider column rather
+   than squeezing them, so a week can end up wider than the pane. The
+   header, the all-day strip and the hour grid live inside here together,
+   so they scroll as one and can never fall out of alignment. */
+.tg-pan{flex:1;min-height:0;display:flex;overflow-x:auto;overflow-y:hidden}
+.tg-cols{
+  flex:1 0 auto;min-width:100%;min-height:0;
+  display:flex;flex-direction:column;
+}
+
+.tg-head{
+  display:flex;flex:0 0 auto;padding-right:10px;
+  border-bottom:1px solid var(--line);background:var(--panel);
+}
+.tg-gutter{flex:0 0 52px;border-right:1px solid var(--line)}
+.tg-col-head{
+  flex:1;min-width:0;padding:9px 6px 8px;text-align:center;
+  border-left:1px solid var(--line);cursor:pointer;
+}
+.tg-col-head:first-of-type{border-left:none}
+.tg-col-head .dw{
+  font-size:10px;font-weight:600;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--faint);
+}
+.tg-col-head .dn{
+  font-size:18px;font-weight:600;letter-spacing:-.02em;margin-top:2px;
+  width:30px;height:30px;line-height:30px;border-radius:9px;
+  display:inline-block;transition:background .12s;
+}
+.tg-col-head:hover .dn{background:var(--panel-3)}
+.tg-col-head.today .dw{color:var(--accent)}
+.tg-col-head.today .dn,.tg-col-head.today:hover .dn{background:var(--accent);color:#fff}
+
+/* all-day / untimed strip */
+.allday{
+  display:flex;flex:0 0 auto;min-height:30px;max-height:104px;padding-right:10px;
+  border-bottom:1px solid var(--line);background:var(--panel-2);overflow-y:auto;
+}
+.allday-label{
+  flex:0 0 52px;border-right:1px solid var(--line);
+  font-size:9.5px;color:var(--faint);text-align:right;padding:7px 7px 0 0;
+  letter-spacing:.06em;text-transform:uppercase;
+}
+.allday-col{
+  flex:1;min-width:0;border-left:1px solid var(--line);
+  padding:4px;display:flex;flex-direction:column;gap:3px;
+}
+.allday-col:first-of-type{border-left:none}
+
+.dropping{background:var(--accent-fog)!important}
+
+/* scroll body */
+.tg-scroll{flex:1;overflow-y:auto;position:relative}
+.tg-body{display:flex;position:relative;padding-right:10px}
+
+.hours{flex:0 0 52px;border-right:1px solid var(--line);position:relative}
+.hour-mark{height:var(--hour);position:relative}
+.hour-mark span{
+  position:absolute;right:8px;top:-7px;padding:0 2px;
+  font-size:10px;color:var(--faint);font-variant-numeric:tabular-nums;
+  background:var(--bg);
+}
+.hour-mark:first-child span{display:none}
+
+.daycol{flex:1;min-width:0;position:relative;border-left:1px solid var(--line)}
+.daycol:first-of-type{border-left:none}
+.daycol.weekend{background:rgba(127,127,127,.026)}
+
+.gridline{position:absolute;left:0;right:0;height:1px;background:var(--line);pointer-events:none}
+.gridline.half{opacity:.4}
+
+/* ---------- timed block ---------- */
+.block{
+  position:absolute;border-radius:7px;min-height:18px;
+  padding:4px 9px 4px 8px;                 /* room between the text and the edges */
+  overflow:hidden;cursor:grab;user-select:none;
+  transition:box-shadow .12s,filter .12s;
+}
+/* The label's colours down the left edge. A pseudo-element rather than a
+   border, because a border can only be one colour and a label can be three. */
+.block::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:2.5px;
+  background:var(--stripe);
+}
+.block:hover{filter:brightness(1.13);box-shadow:var(--shadow-sm);z-index:5}
+.block:active{cursor:grabbing}
+
+/* The name stays on one line whatever the width — a title wrapping into a
+   paragraph inside a 40-minute block is unreadable, and pushes the time out
+   of sight. Too narrow to fit, and it ends in an ellipsis instead. */
+.block .bt{
+  font-size:11.5px;font-weight:560;line-height:1.3;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+/* the subtitle gets its own line in a block, where there's height for it */
+.block .bs{
+  font-size:10px;opacity:.72;line-height:1.3;margin-top:1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+
+.block .bm{
+  font-size:10px;opacity:.72;margin-top:1px;font-variant-numeric:tabular-nums;
+  display:flex;align-items:center;gap:4px;
+  white-space:nowrap;overflow:hidden;
+}
+.block.done{opacity:.45}
+.block.done .bt{text-decoration:line-through}
+
+.block .grip{position:absolute;left:0;right:0;bottom:0;height:7px;cursor:ns-resize}
+.block .grip::after{
+  content:"";position:absolute;left:50%;bottom:2px;transform:translateX(-50%);
+  width:18px;height:2px;border-radius:99px;background:currentColor;
+  opacity:0;transition:opacity .12s;
+}
+.block:hover .grip::after{opacity:.35}
+
+.block.tiny{padding:1px 9px 1px 8px;display:flex;align-items:center;gap:6px}
+.block.tiny .bt{font-size:10.5px;min-width:0}
+.block.tiny .bm{margin-top:0;font-size:9.5px;flex:0 0 auto}
+
+/* ---------- now indicator ---------- */
+.nowline{position:absolute;left:0;right:0;height:2px;background:var(--danger);z-index:6;pointer-events:none}
+.nowline::before{
+  content:"";position:absolute;left:-4px;top:-3px;
+  width:8px;height:8px;border-radius:99px;background:var(--danger);
+}
+.nowlabel{
+  position:absolute;right:100%;margin-right:6px;top:-8px;padding:0 3px;
+  font-size:9.5px;font-weight:650;color:var(--danger);background:var(--bg);
+  border-radius:3px;font-variant-numeric:tabular-nums;
+}
+
+/* ============================================================
+   MONTH
+   ============================================================ */
+.month{display:flex;flex-direction:column;height:100%;min-height:0}
+.month-head{display:flex;border-bottom:1px solid var(--line);background:var(--panel)}
+.month-head div{
+  flex:1;text-align:center;padding:8px 0;
+  font-size:10px;font-weight:650;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);
+}
+.month-grid{flex:1;display:grid;grid-template-columns:repeat(7,1fr);min-height:0}
+
+.month-cell{
+  border-right:1px solid var(--line);border-bottom:1px solid var(--line);
+  padding:4px 5px 5px;display:flex;flex-direction:column;gap:2px;
+  min-height:0;overflow:hidden;position:relative;transition:background .12s;
+}
+.month-cell:nth-child(7n){border-right:none}
+.month-cell.out{background:rgba(127,127,127,.035)}
+.month-cell.out .dnum{color:var(--faint);opacity:.55}
+.month-cell.weekend:not(.out){background:rgba(127,127,127,.02)}
+
+.dnum{
+  font-size:11.5px;font-weight:600;color:var(--muted);flex:0 0 auto;align-self:flex-start;
+  width:20px;height:20px;line-height:20px;text-align:center;border-radius:6px;
+  font-variant-numeric:tabular-nums;
+}
+.month-cell.today .dnum{background:var(--accent);color:#fff}
+
+.chips{display:flex;flex-direction:column;gap:2px;overflow:hidden;min-height:0}
+.more{
+  font-size:10px;color:var(--faint);padding:1px 6px;
+  cursor:pointer;font-weight:600;border-radius:4px;
+}
+.more:hover{color:var(--text);background:var(--panel-3)}
+
+/* ---------- chip (used in month cells + all-day strip) ---------- */
+.chip{
+  display:flex;align-items:center;gap:5px;flex:0 0 auto;position:relative;
+  padding:2px 6px 2px 8px;border-radius:5px;cursor:grab;
+  font-size:11px;line-height:1.4;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:filter .12s;
+}
+/* same stripe as a block — see .block::before */
+.chip::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:2px;
+  background:var(--stripe);
+}
+.chip:hover{filter:brightness(1.15)}
+.chip:active{cursor:grabbing}
+.chip .ct{overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.chip .cm{opacity:.7;font-size:10px;font-variant-numeric:tabular-nums;flex:0 0 auto}
+/* the subtitle rides on the same line, dimmed, and is the first thing to
+   get clipped when the cell is narrow — the title matters more */
+.chip .cs{
+  opacity:.62;min-width:0;flex:0 1 auto;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.chip .cs::before{content:"· "}
+.chip.done{opacity:.45}
+.chip.done .ct{text-decoration:line-through}
+
+/* A run of days is drawn once in every cell it covers. Flattening the
+   joined edges makes the row of cells read as one continuous bar rather
+   than as several copies of the same task. */
+.chip.from{border-top-left-radius:0;border-bottom-left-radius:0}
+.chip.from::before{display:none}
+.chip.into{border-top-right-radius:0;border-bottom-right-radius:0}
+
+/* Pull each segment out into its cell's padding so the bar closes up.
+   The all-day strip lets the chip bleed over the column rule as well, so
+   there it's seamless; month cells clip at their own border, so the 1px
+   grid line stays — which reads as the calendar grid, not as a gap. */
+.allday-col .chip.from{margin-left:-5px}
+.allday-col .chip.into{margin-right:-5px}
+.month-cell .chip.from{margin-left:-5px}
+.month-cell .chip.into{margin-right:-5px}
+
+/* ============================================================
+   YEAR
+   ============================================================ */
+.year{
+  flex:1;overflow-y:auto;padding:18px;align-content:start;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(198px,1fr));gap:18px;
+}
+.mini{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:10px 11px 11px}
+.mini.cur{border-color:var(--accent)}
+.mini h4{
+  font-size:11.5px;font-weight:650;letter-spacing:.02em;margin-bottom:8px;
+  display:flex;align-items:center;gap:6px;cursor:pointer;
+}
+.mini h4:hover{color:var(--accent)}
+.mini h4 .tot{
+  margin-left:auto;font-size:9.5px;font-weight:600;color:var(--faint);
+  background:var(--panel-3);padding:1px 5px;border-radius:99px;
+}
+.mini-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px}
+.mini-dw{
+  font-size:8.5px;color:var(--faint);text-align:center;font-weight:650;
+  text-transform:uppercase;padding-bottom:3px;letter-spacing:.04em;
+}
+.mini-d{
+  aspect-ratio:1;display:grid;place-items:center;position:relative;cursor:pointer;
+  font-size:9.5px;border-radius:4px;color:var(--muted);
+  font-variant-numeric:tabular-nums;transition:background .1s,color .1s;
+}
+.mini-d:hover{background:var(--panel-3);color:var(--text)}
+.mini-d.out{opacity:0;pointer-events:none}
+.mini-d.has{font-weight:700;color:var(--text)}
+.mini-d.today{outline:1.5px solid var(--accent);outline-offset:-1.5px;font-weight:700;color:var(--text)}

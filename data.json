@@ -2,171 +2,163 @@
   "version": 2,
   "tasks": [
     {
-      "id": "46dzpiv5u48",
+      "id": "w32h3wg25d7",
       "space": "work",
-      "title": "Videoclip — “Nightdrive”",
-      "subtitle": "First cut · Aurora Records",
-      "notes": "3:42 track. Client wants a first cut by Friday.",
-      "date": "2026-09-14",
-      "endDate": null,
-      "start": "09:30",
-      "dur": 285,
-      "due": "2026-09-18",
-      "label": "client-a",
-      "done": false,
-      "status": "doing",
-      "order": 0,
-      "steps": [
-        {
-          "id": "mzef9nt5u48",
-          "text": "Listen through, mark the beats",
-          "done": true
-        },
-        {
-          "id": "5epnk3z5u48",
-          "text": "Moodboard + colour script",
-          "done": true
-        },
-        {
-          "id": "n85n2pk5u48",
-          "text": "Storyboard the opening sequence",
-          "done": false
-        },
-        {
-          "id": "1nzpo765u48",
-          "text": "Animate 00:00 – 01:10",
-          "done": false
-        },
-        {
-          "id": "lnumvnm5u48",
-          "text": "Type treatment for the title",
-          "done": false
-        },
-        {
-          "id": "g8ksa7u5u48",
-          "text": "Grade and export the master",
-          "done": false
-        }
-      ],
-      "entries": [
-        {
-          "id": "unczaap5u48",
-          "min": 95,
-          "note": "first pass",
-          "at": 1789324690616
-        }
-      ],
-      "files": [
-        {
-          "id": "zss64hi7ax9",
-          "at": 1789411159053,
-          "name": "LOGO CRF.png",
-          "size": 9216,
-          "type": "image/png",
-          "path": "FILES/Work/Videoclip — “Nightdrive”/LOGO CRF.png"
-        },
-        {
-          "id": "b5l4gi07g2k",
-          "at": 1789411165724,
-          "name": "Screenshot 2026-09-14 at 19.37.17.png",
-          "size": 2030241,
-          "type": "image/png",
-          "path": "FILES/Work/Videoclip — “Nightdrive”/Screenshot 2026-09-14 at 19.37.17.png"
-        }
-      ],
-      "createdAt": 1789411090616,
-      "updatedAt": 1789411169120
-    },
-    {
-      "id": "tq51xib5u48",
-      "space": "work",
-      "title": "Client call — feedback round 2",
+      "title": "HOMEM DO JOGO",
       "subtitle": "",
       "notes": "",
-      "date": "2026-09-14",
-      "endDate": null,
-      "start": "15:00",
-      "dur": 45,
-      "due": null,
-      "label": "client-a",
-      "done": false,
-      "status": "doing",
-      "order": 1,
-      "steps": [],
-      "entries": [],
-      "files": [],
-      "createdAt": 1789411090616,
-      "updatedAt": 1789411090616
-    },
-    {
-      "id": "3u42oev5u48",
-      "space": "work",
-      "title": "Render + export deliverables",
-      "subtitle": "",
-      "notes": "ProRes 4444 master + H.264 web cut.",
-      "date": "2026-09-15",
-      "endDate": null,
+      "date": "2026-09-16",
+      "endDate": "2026-09-26",
       "start": null,
-      "dur": 60,
-      "due": "2026-09-15",
-      "label": "delivered",
-      "done": false,
-      "status": "review",
-      "order": 0,
-      "steps": [],
-      "entries": [],
-      "files": [],
-      "createdAt": 1789411090616,
-      "updatedAt": 1789411090616
-    },
-    {
-      "id": "5gkw38t5u48",
-      "space": "work",
-      "title": "Rebuild the type animation rig",
-      "subtitle": "",
-      "notes": "No brief yet — parked here until it lands.",
-      "date": null,
-      "endDate": null,
-      "start": null,
-      "dur": 60,
-      "due": null,
-      "label": "client-a",
-      "done": false,
-      "status": "backlog",
-      "order": 0,
-      "steps": [],
-      "entries": [],
-      "files": [],
-      "createdAt": 1789411090616,
-      "updatedAt": 1789411090616
-    },
-    {
-      "id": "0bze4d95u48",
-      "space": "work",
-      "title": "Update showreel",
-      "subtitle": "",
-      "notes": "",
-      "date": null,
-      "endDate": null,
-      "start": null,
-      "dur": 60,
-      "due": "2026-10-05",
+      "dur": 540,
+      "due": "2026-09-16",
       "label": "pitch",
       "done": false,
-      "status": "backlog",
-      "order": 1,
-      "steps": [],
-      "entries": [],
+      "status": "doing",
+      "order": 0,
+      "pin": {
+        "x": 0,
+        "y": 0
+      },
+      "span": {
+        "w": 1,
+        "h": 2
+      },
+      "lane": 0,
+      "steps": [
+        {
+          "id": "vwd8tfa3065",
+          "text": "CARTAO HOMEM DO JOGO",
+          "done": false
+        },
+        {
+          "id": "6d0lq1b31nv",
+          "text": "ASSINATURA",
+          "done": false
+        },
+        {
+          "id": "dm4kegy33s4",
+          "text": "PERGUNTAS",
+          "done": true
+        },
+        {
+          "id": "4y0andj5pbn",
+          "text": "ANIMAÇÃO AUDIO",
+          "done": false
+        },
+        {
+          "id": "ntyw1cj60yw",
+          "text": "INTRO JORNADA",
+          "done": true
+        }
+      ],
       "files": [],
-      "createdAt": 1789411090616,
-      "updatedAt": 1789411090616
+      "archivedAt": 0,
+      "createdAt": 1789496578987,
+      "updatedAt": 1789570213337
     },
     {
-      "id": "4lm87g45u48",
-      "space": "personal",
-      "title": "Learn Houdini — chapter 3",
-      "subtitle": "",
-      "notes": "Pyro solver. 40 min a night.",
+      "id": "1i01zzj7mup",
+      "space": "work",
+      "title": "WORTEN",
+      "subtitle": "LEGENDAS JORGE BRITO",
+      "notes": "",
+      "date": null,
+      "endDate": null,
+      "start": null,
+      "dur": 60,
+      "due": null,
+      "label": "hy3ojq8cme1",
+      "done": true,
+      "status": "done",
+      "order": 0,
+      "pin": {
+        "x": 5,
+        "y": 0
+      },
+      "span": {
+        "w": 1,
+        "h": 1
+      },
+      "lane": null,
+      "steps": [],
+      "files": [],
+      "archivedAt": 0,
+      "createdAt": 1789552262257,
+      "updatedAt": 1789567719122
+    },
+    {
+      "id": "syebhwo8glm",
+      "space": "work",
+      "title": "NIU",
+      "subtitle": "PRAÇA CONTINENTE",
+      "notes": "",
+      "date": "2026-09-16",
+      "endDate": null,
+      "start": "09:00",
+      "dur": 120,
+      "due": null,
+      "label": "wd1gwccbx5c",
+      "done": false,
+      "status": "doing",
+      "order": 3,
+      "pin": {
+        "x": 4,
+        "y": 0
+      },
+      "span": {
+        "w": 1,
+        "h": 1
+      },
+      "lane": 2,
+      "steps": [],
+      "files": [],
+      "archivedAt": 0,
+      "createdAt": 1789552300810,
+      "updatedAt": 1789570309731
+    },
+    {
+      "id": "2zkkdge8s3q",
+      "space": "work",
+      "title": "PITCH",
+      "subtitle": "EP 18",
+      "notes": "",
+      "date": null,
+      "endDate": null,
+      "start": null,
+      "dur": 60,
+      "due": null,
+      "label": "0ujthbxcf2b",
+      "done": false,
+      "status": "doing",
+      "order": 2,
+      "pin": {
+        "x": 3,
+        "y": 0
+      },
+      "span": {
+        "w": 1,
+        "h": 1
+      },
+      "lane": null,
+      "steps": [
+        {
+          "id": "rgi6h92i8mt",
+          "text": "ORACULO FERA (WHATSAPP)",
+          "done": false
+        }
+      ],
+      "files": [],
+      "archivedAt": 0,
+      "createdAt": 1789552315718,
+      "updatedAt": 1789566825253
+    },
+    {
+      "id": "8lrrdd6970w",
+      "space": "work",
+      "title": "CRF",
+      "subtitle": "VERSÃO JAPONESA",
+      "notes": "",
       "date": null,
       "endDate": null,
       "start": null,
@@ -175,49 +167,89 @@
       "label": "client-a",
       "done": false,
       "status": "doing",
-      "order": 0,
+      "order": 1,
+      "pin": {
+        "x": 2,
+        "y": 0
+      },
+      "span": {
+        "w": 1,
+        "h": 1
+      },
+      "lane": null,
+      "steps": [],
+      "files": [],
+      "archivedAt": 0,
+      "createdAt": 1789552335056,
+      "updatedAt": 1789566829514
+    },
+    {
+      "id": "hte6z6iep4v",
+      "space": "work",
+      "title": "GALP",
+      "subtitle": "",
+      "notes": "",
+      "date": "2026-09-16",
+      "endDate": null,
+      "start": "14:00",
+      "dur": 60,
+      "due": "2026-09-16",
+      "label": "f2877fnf7zo",
+      "done": false,
+      "status": "doing",
+      "order": 4,
+      "pin": {
+        "x": 1,
+        "y": 0
+      },
+      "span": {
+        "w": 1,
+        "h": 1
+      },
+      "lane": 1,
       "steps": [
         {
-          "id": "414f1vr5u48",
-          "text": "Watch the lesson",
-          "done": true
-        },
-        {
-          "id": "v2w4e355u48",
-          "text": "Rebuild the example",
+          "id": "owmc6xoyuap",
+          "text": "CARTAO LOGOS 9X16",
           "done": false
         },
         {
-          "id": "cmwwqxi5u48",
-          "text": "Try it on my own shot",
+          "id": "82xzwsazd6t",
+          "text": "ELEMENTOS 9X16",
           "done": false
         }
       ],
-      "entries": [],
       "files": [],
-      "createdAt": 1789411090616,
-      "updatedAt": 1789411090616
+      "archivedAt": 0,
+      "createdAt": 1789552591807,
+      "updatedAt": 1789567977061
     },
     {
-      "id": "bytx2z25u48",
-      "space": "personal",
-      "title": "Renew passport",
-      "subtitle": "",
-      "notes": "Expires in the spring.",
+      "id": "4ff5ojdjpdt",
+      "space": "work",
+      "title": "WORTEN",
+      "subtitle": "LEGENDAS CELIA BARTOLOMEU",
+      "notes": "",
       "date": null,
       "endDate": null,
       "start": null,
       "dur": 60,
-      "due": "2026-10-29",
-      "label": "client-b",
-      "done": false,
-      "status": "backlog",
-      "order": 0,
+      "due": null,
+      "label": "hy3ojq8cme1",
+      "done": true,
+      "status": "done",
+      "order": 1,
+      "pin": null,
+      "span": {
+        "w": 1,
+        "h": 1
+      },
+      "lane": null,
       "steps": [],
-      "entries": [],
       "files": [],
-      "createdAt": 1789411090616,
-      "updatedAt": 1789411090616
+      "archivedAt": 1789567757949,
+      "createdAt": 1789554505025,
+      "updatedAt": 1789567757949
     }
   ],
   "labels": [
@@ -225,15 +257,14 @@
       "id": "xs5kvmpbtpk",
       "name": "CATÓLICA",
       "colors": [
-        "#8b7cf6"
+        "#3f7fe0"
       ]
     },
     {
       "id": "client-a",
       "name": "CRF",
       "colors": [
-        "#8b7cf6",
-        "#ec6cb4"
+        "#3f7fe0"
       ]
     },
     {
@@ -247,42 +278,49 @@
       "id": "delivered",
       "name": "FUNDAÇÃO EDP",
       "colors": [
-        "#46c07f"
+        "#7a5cf0"
+      ]
+    },
+    {
+      "id": "f2877fnf7zo",
+      "name": "GALP",
+      "colors": [
+        "#f0873f"
       ]
     },
     {
       "id": "client-b",
       "name": "LEROY MERLIN",
       "colors": [
-        "#5a9cf8"
+        "#79c245"
       ]
     },
     {
       "id": "pitch",
       "name": "LIGA MEU SUPER",
       "colors": [
-        "#ec6cb4"
+        "#46c07f"
       ]
     },
     {
       "id": "wd1gwccbx5c",
       "name": "NIU",
       "colors": [
-        "#8b7cf6"
+        "#ffffff"
       ]
     },
     {
       "id": "0ujthbxcf2b",
       "name": "PITCH",
       "colors": [
-        "#8b7cf6"
+        "#e04a7a"
       ]
     },
     {
       "id": "hy3ojq8cme1",
       "name": "WORTEN",
       "colors": [
-        "#8b7cf6"
+        "#ef5f5f"
       ]
     }
   ],
@@ -291,7 +329,7 @@
     "work": [
       {
         "id": "backlog",
-        "name": "Backlog",
+        "name": "UNSCHEDULED",
         "done": false
       },
       {
@@ -301,7 +339,7 @@
       },
       {
         "id": "review",
-        "name": "Review",
+        "name": "WAITING FEEDBACK",
         "done": false
       },
       {
@@ -333,14 +371,17 @@
       }
     ]
   },
-  "timer": null,
   "settings": {
     "theme": "dark",
     "space": "work",
-    "view": "week",
-    "lastDated": "week",
+    "view": "day",
+    "lastDated": "day",
     "hideDone": false,
+    "sidebar": true,
     "dayStart": 7,
     "dayEnd": 23
-  }
+  },
+  "rev": 371,
+  "savedBy": "MOTION-DEBORA",
+  "savedAt": 1789570309916
 }

@@ -1,0 +1,130 @@
+/* ============================================================
+   todo.css — the to-do wall
+
+   Cards are absolutely positioned on a grid the user controls,
+   so unlike every other view nothing here flows. The faint grid
+   in the background is what makes the snapping legible.
+   ============================================================ */
+
+.todo{display:flex;flex-direction:column;height:100%;min-height:0}
+
+/* ---------- the strip along the top ---------- */
+.todo-bar{
+  flex:0 0 auto;display:flex;align-items:center;gap:12px;
+  padding:9px 14px;border-bottom:1px solid var(--line);background:var(--panel);
+}
+.todo-count{
+  font-size:11px;font-weight:650;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--muted);
+}
+.todo-hint{font-size:10.5px;color:var(--faint)}
+.todo-bar .btn{margin-left:auto}
+
+/* ---------- the wall ---------- */
+.todo-scroll{flex:1;min-height:0;overflow:auto;position:relative}
+
+.todo-wall{
+  position:relative;min-width:100%;min-height:100%;
+  /* one dot per cell corner, so the grid reads without drawing lines */
+  background-image:radial-gradient(circle, var(--line) 1px, transparent 1px);
+  background-size:256px 208px;     /* one dot per cell corner */
+  background-position:15px 15px;
+}
+
+.todo-empty{
+  position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);
+  color:var(--faint);font-size:12px;line-height:1.7;text-align:center;
+  white-space:pre-line;
+}
+
+/* the footprint a dragged or resized card will take */
+.cellghost{
+  position:absolute;border-radius:10px;pointer-events:none;
+  border:2px dashed var(--accent);background:var(--accent-fog);
+}
+/* it can't go there — something is already under it */
+.cellghost.blocked{
+  border-color:var(--danger);
+  background:rgba(239,95,95,.10);
+}
+
+/* ---------- a card ---------- */
+.tcard{
+  /* width and height are set per card — one cell, or several */
+  position:absolute;
+  display:flex;overflow:hidden;cursor:grab;
+  background:var(--panel-2);border:1px solid var(--line);border-radius:10px;
+  transition:border-color .12s,background .12s,box-shadow .12s;
+}
+.tcard:hover{background:var(--panel-3);border-color:var(--line-2)}
+.tcard:active{cursor:grabbing}
+
+/* lifted out of the grid and following the cursor */
+.tcard.lifted{
+  z-index:40;box-shadow:var(--shadow);border-color:var(--accent);
+  transition:none;                 /* must not lag behind the pointer */
+}
+
+.tcard.done{opacity:.5}
+.tcard.done .tcard-title{text-decoration:line-through}
+
+.tcard-stripe{flex:0 0 3px;align-self:stretch}
+
+.tcard-body{
+  flex:1;min-width:0;padding:9px 10px 9px;
+  display:flex;flex-direction:column;gap:5px;
+}
+
+.tcard-top{display:flex;align-items:flex-start;gap:7px}
+.tcard-names{flex:1;min-width:0}
+.tcard-title{
+  font-size:12.5px;font-weight:550;line-height:1.3;
+  /* two lines at most, then an ellipsis — the cell is a fixed height */
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  overflow:hidden;word-break:break-word;
+}
+.tcard-sub{
+  font-size:11px;color:var(--faint);line-height:1.3;margin-top:2px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+
+/* when it sits on the calendar — or that it doesn't */
+.tcard-when{
+  font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.tcard-when.none{color:var(--faint);font-style:italic}
+
+/* the task list sits in the middle; the pills stay pinned to the bottom
+   so cards line up with each other however much each one holds */
+.tcard .card-steps{margin-top:2px}
+.tcard .cs-item:hover{background:var(--panel)}
+
+.tcard-meta{
+  margin-top:auto;display:flex;align-items:center;gap:5px;
+  flex-wrap:wrap;overflow:hidden;max-height:19px;
+}
+
+/* ---------- the resize corner ---------- */
+.tcard-grip{
+  position:absolute;right:0;bottom:0;width:18px;height:18px;
+  cursor:nwse-resize;opacity:0;transition:opacity .12s;
+}
+.tcard:hover .tcard-grip{opacity:1}
+/* two short rules, the usual corner-grip shorthand */
+.tcard-grip::after,
+.tcard-grip::before{
+  content:"";position:absolute;right:3px;
+  height:1.5px;border-radius:99px;background:var(--faint);
+  transform:rotate(-45deg);transform-origin:100% 50%;
+}
+.tcard-grip::after{bottom:4px;width:11px}
+.tcard-grip::before{bottom:8px;width:6px}
+.tcard-grip:hover::after,
+.tcard-grip:hover::before{background:var(--accent)}
+
+/* a card being resized shouldn't animate its own size behind the pointer */
+.tcard.sizing{transition:none;z-index:30;border-color:var(--accent)}
+
+/* the list scrolls rather than spilling if a card is shrunk under it */
+.tcard .card-steps{min-height:0;overflow:hidden}

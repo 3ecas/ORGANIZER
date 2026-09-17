@@ -33,7 +33,6 @@ ORG.util = (() => {
 
   const PATH = {
     clip:  "M21 11l-8.5 8.5a5 5 0 01-7-7L14 4a3.5 3.5 0 015 5l-8.5 8.5a2 2 0 01-3-3L15 6",
-    clock: "M12 7v5l3 2M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
     flag:  "M4 21V4h13l-2 4 2 4H4",
   };
 
@@ -74,21 +73,11 @@ ORG.util = (() => {
   };
   const parseTime = s => { const [h,m] = s.split(":").map(Number); return h*60 + m; };
 
-  /** 195 -> "3h 15m"   60 -> "1h"   45 -> "45m"   0 -> "0m" */
-  const fmtHM = mins => {
-    const m = Math.max(0, Math.round(mins));
-    const h = Math.floor(m / 60), r = m % 60;
-    if (!h) return `${r}m`;
-    return r ? `${h}h ${r}m` : `${h}h`;
-  };
-
-  /** Elapsed clock for the running timer: "1:04:22" */
-  const fmtClock = ms => {
-    const s = Math.max(0, Math.floor(ms / 1000));
-    const h = Math.floor(s/3600), m = Math.floor(s/60) % 60, ss = s % 60;
-    return h
-      ? `${h}:${String(m).padStart(2,"0")}:${String(ss).padStart(2,"0")}`
-      : `${m}:${String(ss).padStart(2,"0")}`;
+  /** A moment in human terms: "14:32", or "14 Sep 14:32" if it wasn't today. */
+  const fmtWhen = ms => {
+    const d = new Date(ms);
+    const t = `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+    return ymd(d) === ymd(new Date()) ? t : `${d.getDate()} ${MON_SHORT[d.getMonth()]} ${t}`;
   };
 
   /** Friendly due-date wording relative to today. */
@@ -168,7 +157,7 @@ ORG.util = (() => {
     clamp, uid,
     DOW, DOW_FULL, MONTHS, MON_SHORT,
     ymd, parseYmd, addDays, sameDay, dowMon, startOfWeek, daysBetween,
-    fmtMin, parseTime, fmtHM, fmtClock, relDay, bytes,
+    fmtMin, parseTime, fmtWhen, relDay, bytes,
     hexToRgba, shade, shadeHex, luma, isLight,
     debounce, toast, bus,
   };

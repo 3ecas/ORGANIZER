@@ -59,39 +59,6 @@
   .pane-left{flex:0 0 auto;width:auto;border-right:none;border-bottom:1px solid var(--line);max-height:50%}
 }
 
-/* ============================================================
-   LEFT PANE — time tracking block
-   ============================================================ */
-.tt{
-  background:var(--panel-2);border:1px solid var(--line);
-  border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:10px;
-}
-.tt-top{display:flex;align-items:flex-end;gap:10px}
-.tt-total{
-  font-size:26px;font-weight:650;letter-spacing:-.03em;line-height:1;
-  font-variant-numeric:tabular-nums;
-}
-.tt-total.live{color:var(--danger)}
-.tt-of{font-size:11px;color:var(--faint);padding-bottom:3px}
-.tt-actions{display:flex;gap:5px;flex-wrap:wrap}
-.tt-actions .btn{flex:0 0 auto}
-
-.tt-list{display:flex;flex-direction:column;gap:1px;max-height:150px;overflow-y:auto;margin:0 -4px}
-.tt-entry{
-  display:flex;align-items:center;gap:8px;padding:4px 6px;
-  border-radius:5px;font-size:11.5px;transition:background .12s;
-}
-.tt-entry:hover{background:var(--panel-3)}
-.tt-entry .e-min{font-weight:620;font-variant-numeric:tabular-nums;flex:0 0 auto;min-width:46px}
-.tt-entry .e-when{color:var(--faint);font-size:10.5px;flex:0 0 auto}
-.tt-entry .e-note{
-  flex:1;min-width:0;color:var(--muted);overflow:hidden;
-  text-overflow:ellipsis;white-space:nowrap;
-}
-.tt-entry .e-del{opacity:0;color:var(--faint);font-size:14px;line-height:1;padding:0 3px}
-.tt-entry:hover .e-del{opacity:1}
-.tt-entry .e-del:hover{color:var(--danger)}
-
 /* due-date row with a clear button */
 .withclear{display:flex;gap:6px}
 .withclear .input{flex:1}

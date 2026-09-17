@@ -1,0 +1,173 @@
+/* ============================================================
+   timeline.css — Day and Week, along a horizontal axis
+
+   Time runs left to right. Every task is a bar in its own lane,
+   stacked down only where bars would collide. The whole thing
+   scrolls sideways when the day is longer than the window.
+   ============================================================ */
+
+.tl{display:flex;flex-direction:column;height:100%;min-height:0}
+
+/* ---------- the ruler ---------- */
+.tl-head{
+  flex:0 0 auto;overflow:hidden;
+  border-bottom:1px solid var(--line);background:var(--panel);
+}
+.tl-rail{position:relative;height:46px}
+
+.tl-tick{
+  position:absolute;top:0;bottom:0;
+  display:flex;align-items:center;gap:6px;padding-left:10px;
+  border-left:1px solid var(--line);
+}
+.tl-tick:first-child{border-left:none}
+
+.tl-tick .hr{
+  font-size:10.5px;color:var(--faint);font-variant-numeric:tabular-nums;
+}
+.tl .week .tl-tick{cursor:pointer}
+.tl-tick .dw{
+  font-size:10px;font-weight:600;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--faint);
+}
+.tl-tick .dn{
+  font-size:16px;font-weight:600;letter-spacing:-.02em;
+  min-width:26px;height:26px;line-height:26px;text-align:center;border-radius:8px;
+  transition:background .12s;
+}
+.tl-tick:hover .dn{background:var(--panel-3)}
+.tl-tick.today .dw{color:var(--accent)}
+.tl-tick.today .dn{background:var(--accent);color:#fff}
+
+/* ---------- the lanes ---------- */
+.tl-scroll{flex:1;min-height:0;overflow:auto}
+.tl-body{position:relative;min-width:100%;min-height:100%}
+
+.tl-slot{
+  position:absolute;top:0;bottom:0;
+  border-left:1px solid var(--line);
+}
+.tl-slot:first-child{border-left:none}
+.tl-slot.weekend{background:rgba(127,127,127,.026)}
+.tl-slot.dropping{background:var(--accent-fog)}
+
+.tl-empty{
+  position:absolute;left:0;right:0;top:44px;
+  text-align:center;color:var(--faint);font-size:12px;line-height:1.7;
+  white-space:pre-line;pointer-events:none;
+}
+
+/* ---------- a bar ----------
+   Height is fixed: a bar's LENGTH is its duration, so its height
+   carries no meaning and shouldn't pretend to. */
+.tlbar{
+  position:absolute;height:52px;
+  display:flex;align-items:flex-start;gap:7px;
+  padding:7px 9px 7px 8px;border-radius:8px;
+  border-left:2.5px solid;cursor:grab;user-select:none;
+  font-size:11.5px;white-space:nowrap;
+  transition:filter .12s,box-shadow .12s;
+}
+/* No overflow:hidden — the text below sticks as you scroll, and a clipping
+   ancestor would make it stick to the bar instead of to the window. The
+   rounded corners clip the tint on their own, and every text node inside
+   already ellipsises itself. */
+.tlbar:hover{filter:brightness(1.13);box-shadow:var(--shadow-sm);z-index:6}
+.tlbar:active{cursor:grabbing}
+.tlbar.done{opacity:.45}
+.tlbar.done .tt{text-decoration:line-through}
+.tlbar.stretching{transition:none;z-index:8;box-shadow:var(--shadow)}
+
+/* A long bar can start off the left of the window — a job running all day,
+   or all week. The name travels with you instead of being stranded at the
+   start of it, and stops at the bar's own far end. */
+.tlbar-txt{
+  /* shrink-to-fit, not flex:1 — a box that already fills the bar has
+     nowhere to slide to, and sticky would do nothing */
+  flex:0 1 auto;min-width:0;max-width:calc(100% - 6px);
+  display:flex;flex-direction:column;gap:2px;overflow:hidden;
+  position:sticky;left:10px;
+}
+/* line one: the name, on its own, with the whole width */
+.tlbar .tt{
+  font-weight:560;line-height:1.25;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;
+}
+/* line two: when it is, and whatever else fits */
+.tlbar-sub{
+  display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;
+}
+.tlbar .ts{
+  flex:0 1 auto;font-size:10.5px;opacity:.62;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;
+}
+/* Everything in a bar must be able to give way. The bar can't clip its own
+   overflow — that would make it the scroll container and strand the sticky
+   name against it — so containment is each child's own job. */
+.tlbar-when{
+  flex:0 1 auto;min-width:0;font-size:10px;opacity:.75;
+  font-variant-numeric:tabular-nums;
+  overflow:hidden;text-overflow:ellipsis;
+}
+.tlbar .pill{min-width:0;overflow:hidden}
+
+/* the checkbox has to sit on a tinted bar, not a panel */
+.tlbar .check{border-color:currentColor;opacity:.8;margin-top:1px;position:sticky;left:0}
+.tlbar .check.on{opacity:1}
+
+/* ---------- the ends you drag ---------- */
+.tlbar-grip{
+  position:absolute;top:0;bottom:0;width:9px;
+  cursor:ew-resize;opacity:0;transition:opacity .12s;
+}
+.tlbar-grip.w{left:0}
+.tlbar-grip.e{right:0}
+.tlbar-grip::after{
+  content:"";position:absolute;top:12px;bottom:12px;width:2px;
+  border-radius:99px;background:currentColor;opacity:.55;
+}
+.tlbar-grip.w::after{left:2px}
+.tlbar-grip.e::after{right:2px}
+.tlbar:hover .tlbar-grip{opacity:1}
+
+/* ---------- now ---------- */
+.tl-now{
+  position:absolute;top:0;bottom:0;width:2px;
+  background:var(--danger);z-index:7;pointer-events:none;
+}
+.tl-now::before{
+  content:"";position:absolute;left:-3px;top:0;
+  width:8px;height:8px;border-radius:99px;background:var(--danger);
+}
+.tl-now-label{
+  position:absolute;left:6px;top:-1px;padding:0 4px;
+  font-size:9.5px;font-weight:650;color:var(--danger);
+  background:var(--bg);border-radius:3px;
+  font-variant-numeric:tabular-nums;white-space:nowrap;
+}
+
+/* ============================================================
+   THE LONG TIMELINE
+   Eight weeks at about forty pixels a day. Bars get short, so
+   their names step outside rather than being clipped to nothing.
+   ============================================================ */
+.tl.long .tl-rail{height:38px}
+.tl.long .tl-tick{
+  flex-direction:column;align-items:flex-start;justify-content:center;
+  gap:0;padding-left:5px;
+}
+.tl.long .tl-tick .mo{
+  font-size:8.5px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--accent);
+}
+.tl.long .tl-tick .dn.sm{
+  font-size:11px;font-weight:550;min-width:0;height:auto;line-height:1.3;
+  background:none;text-align:left;
+}
+.tl.long .tl-tick.today .dn.sm{
+  background:var(--accent);color:#fff;
+  min-width:18px;text-align:center;border-radius:5px;
+}
+
+/* a heavier rule where each week starts */
+.tl-slot.weekstart{border-left-color:var(--line-2)}

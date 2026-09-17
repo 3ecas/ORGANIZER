@@ -73,6 +73,68 @@ Removing an attachment from a task **deletes Organizer's copy** in `FILES/`.
 It does not touch the original wherever you got it from. You'll be asked to
 confirm, and told the exact path first.
 
+---
+
+## Using it on more than one computer
+
+Organizer runs from a folder, so **putting that folder in a synced drive is all
+it takes**: Dropbox, OneDrive, Google Drive or iCloud Drive. Put the whole
+ORGANIZER folder in it, and every machine sees the same tasks and the same
+attachments. It works from anywhere, and no machine has to be left switched on.
+
+**On a PC, double-click `start.bat` instead of `start.command`.** It's the same
+thing for Windows. Windows doesn't ship with Python, so the first time you'll
+need it from [python.org](https://www.python.org/downloads/) — tick *Add Python
+to PATH* during the install, that box matters. `start.bat` tells you if it's
+missing.
+
+### The one rule: one computer at a time
+
+Everything lives in a single `data.json`. Two machines editing it at once can't
+be merged — so close Organizer on one before opening it on the other, and give
+the sync a moment to finish.
+
+**If you forget, nothing is lost.** Each save stamps the file with a revision
+number and the name of the machine that wrote it. If another computer has saved
+since the copy you have open was loaded, the save is refused rather than
+overwriting their work, and a red bar appears:
+
+> **Another device saved first.** BERNIE-PC saved this folder at 09:11 while it
+> was open here. Nothing more will be saved on this computer until you reload —
+> that picks up their version. Export first if you've changed things here.
+
+Nothing more is written from that machine until you reload, so the other
+computer's work stays intact. **Export** takes a backup of whatever is on screen
+first, so you can put it back by hand if you'd made changes worth keeping.
+
+### Worth knowing
+
+- **Attachments count against your sync quota.** A folder of ProRes masters will
+  fill a free Dropbox fast. Keep heavy source media outside Organizer and attach
+  stills, PDFs and web cuts.
+- **Your data sits on their servers.** That's the trade for reaching it from
+  anywhere. If that's not acceptable for a given client's material, keep that
+  work in a second copy of the folder outside the synced drive.
+- **It's a git repo too.** `git commit` before you switch machines gives you a
+  second net — that's how the files got back the one time they were deleted.
+
+### Finished work: the archive
+
+Ticking something complete doesn't get it out of the way — over a year of
+client jobs the Done list and the search results fill up with work you finished
+months ago.
+
+**Archive** does get it out of the way, without destroying anything. The task,
+its hours, its checklist and its files all stay in `data.json`; they just stop
+appearing in the calendar, the board, the wall and search.
+
+- **Archive a single card** from the box icon in its header.
+- **Archive the whole Done list** from the *Archive* action on that column.
+- The **archive button in the top bar** shows how many are put away, and opens
+  them grouped by month. Search reaches inside it.
+- **Restore** puts one back in play. Deleting from there is the only thing in
+  Organizer that really destroys a task, and it says so before it does.
+
 ### The Export button
 
 **Export** (or `⌘S`) writes a single `.organizer` file containing everything —
@@ -106,6 +168,17 @@ anything.
 The client labels are shared — the same list in both — but their counts are
 per space.
 
+### Dragging
+
+**You drag the card itself.** It lifts off the page, wobbles gently, and keeps
+its own size and contents the whole way, so you can still read what you're
+moving and where it will fit. There's no stand-in pill following the cursor —
+that told you less than the card does.
+
+It works the same everywhere: the board, the timeline, the to-do wall and the
+sidebar list. Let go somewhere that isn't a drop target and the card goes back
+exactly as it was. The wobble stops if your Mac is set to reduce motion.
+
 ### Tasks that aren't scheduled yet
 
 Type in the box at the top of the sidebar and press Return. It lands in
@@ -115,33 +188,58 @@ sidebar to unschedule it again.
 
 ### On the calendar
 
-- **Drag** a task to move it. It snaps to 15 minutes.
-- **Drag the bottom edge** of a block to change how long it is.
-- **Double-click** empty space to create a task right there.
-- **Click** any task to open it.
-- All-day work sits in the strip above the hours, and can **run across several
-  days** — see below.
+Day and Week run **left to right**. Time is the horizontal axis and every task
+is a bar; bars stack down the page only where they'd otherwise collide.
 
-### When a day gets crowded
+It used to be a vertical hour grid, which is built for appointments — an hour
+tall, an hour's work. A project that runs for a fortnight has no honest shape
+in that, and a bar has both: its **length** says how long, and there's room
+**along** it to actually read what the thing is.
 
-Tasks at the same time sit side by side. Rather than splitting one narrow
-column between them and squeezing every one, **the day itself gets wider** —
-enough for each to stay readable — and the week pans sideways. The dates, the
-all-day strip and the hour grid scroll together, so they can't fall out of
-line, and your position is kept when anything redraws.
+- **Drag a bar** to move it — sideways through time, up and down between lanes,
+  in one gesture.
+- **Lanes are yours.** Drop a bar on any row and that's where it stays, even if
+  something is already there and they overlap. Nothing gets re-packed behind
+  your back.
+- **A row is a fact about the job**, not about the week you're looking at. A bar
+  sits on the same row in Day, Week and Timeline, and is still there after you
+  page away and back. Bars you've never placed take the first free row the first
+  time they're drawn, and keep it.
+- **You can drop onto ground that's already occupied.** Letting go on top of
+  another bar puts yours there; it doesn't refuse.
+- Drag one to the sidebar and it comes off the schedule — it says so when that
+  happens, because it's easy to do by accident on the way past.
+- **Drag either end** to stretch or shrink it. In Week that's the first or last
+  day of a run; in Day it's the start time or the length, snapped to quarter
+  hours. Pulling the left end leaves the far end where it was.
+- **Double-click** empty space to put something there.
+- **Click** any bar to open it.
 
-A task's name always stays on **one line**, cut short with an ellipsis if it
-has to be; the full title is in the hover preview and in the card. Names wrapping
-into a paragraph inside a 40-minute block were unreadable and pushed the times
-out of sight.
+There are three ranges. **Day** is hours across, so a bar's length is its real
+duration. **Week** is seven day-columns and a bar covers whole days. **Timeline**
+— its own button next to Board, or `7` — is **eight weeks** for seeing the shape
+of a season rather than a week.
 
-Quiet days keep sharing the width evenly, so an ordinary week looks exactly as
-it did — nothing moves until a day actually needs the room.
+**Everything a bar says is drawn inside the bar.** A short one cuts its name
+short rather than spilling it into the lane, where it would read as a separate
+empty row and could land on top of a neighbour. Hover it for the full picture.
+
+Week — at an hour's resolution a
+90-minute job would be fifteen pixels wide, which is the unreadable sliver the
+old grid already was. The clock time is printed on the bar instead.
+
+A bar is **two lines tall**: the name on the first, with the whole width to
+itself, and the time, subtitle and deadline sharing the second as they fit.
+Before that they all competed for one strip and the title lost — which was the
+complaint about the vertical grid, just turned on its side.
+
+**The name travels with you.** Scroll into the afternoon and a job that runs all
+day doesn't become an unlabelled slab; its name slides along the bar and stops
+at the bar's own far end. Rest on any bar for the full picture.
 
 ### The board
 
-**Board** has its own button in the top bar, between the search box and the
-Day/Week/Month/Year switch. Press it again (or `5`) to drop back to whichever
+Press **Board** in the top left, or `5` — again to drop back to whichever
 calendar view you came from.
 
 It's the same work seen as lists of cards instead of a calendar.
@@ -166,7 +264,6 @@ list in Work leaves the Personal board exactly as it was.
 
 **It's the same tasks, not a copy.** A card and a calendar block are the same
 thing seen two ways, so anything you change in one shows up in the other
-straight away: set a date on a card and it appears on the calendar; log hours
 on the calendar and the card shows them.
 
 The **Done** list is special — dragging a card into it ticks the task complete,
@@ -215,7 +312,6 @@ Press **Return** in the title field to drop into it.
 
 Hover anything — a chip, a block, a board card, a sidebar item — and hold still
 for **one second**. A preview appears with the whole picture: name and subtitle,
-the first attached image, when it is, the deadline, hours logged, what's left on
 the task list, the start of the notes, and which space, list and client it
 belongs to.
 
@@ -228,9 +324,9 @@ or scroll.
 Opens in two halves:
 
 - **Left — everything about the job.** Which **space** and **board list** it's
-  in, the **client label**, the **task list**, whether it's on the calendar, the **date**
-  with either a **start and end time** or a **last day**, the **due date**, the
-  **hours you've spent**, and notes.
+  in, the **client label**, the **task list**, whether it's on the calendar, the
+  **date** with either a **start and end time** or a **last day**, the **due
+  date**, and notes.
 - **Right — the files.** Drag them straight in from Finder, paste a screenshot,
   or click *Attach*. Images, video, audio, PDFs and text preview inline;
   anything else gets an icon plus *Open* and *Save as…*. Under the preview it
@@ -238,38 +334,31 @@ Opens in two halves:
 
 ### Start and end times
 
-A scheduled task has a **start** and an **end** — set both and the block on the
-calendar sizes itself to match. Dragging the bottom edge of a block on the
-calendar changes the end time, and vice versa; they're the same thing.
+A scheduled task has a **start** and an **end** — set both and the bar on the
+calendar sizes itself to match. Dragging the end of a bar in Day view changes
+the end time, and vice versa; they're the same thing.
 
 An end time at or before the start gets nudged to fifteen minutes, since the
 calendar draws one day at a time and can't show an overnight block properly.
 
 ### Jobs that run across days
 
-Turn on **All day / no fixed time** and a **Last day** field appears. Set it and
-the job shows in the all-day row on *every* day it covers — a four-day shoot
-reads as one continuous bar across Monday to Thursday, in the week view and in
-the month view.
+Turn on **All day / no fixed time** and a **Last day** field appears — or just
+drag the end of the bar in Week view, which does the same thing. A four-day
+shoot is **one bar** from Monday to Thursday, not four copies.
 
 - **Drag it and the whole run moves**, keeping its length. Same if you change
   the first date in the card — it slides, it doesn't stretch.
 - **To make it longer or shorter**, change the Last day. **×** puts it back to a
   single day.
-- **Drop it on a time slot** and it becomes an ordinary timed block on that one
-  day — it says so when it happens, so it isn't a silent change.
+- **Stretching a timed job across days drops its clock** — a run of days has no
+  start time, and it says so when it happens rather than changing it quietly.
 - A last day before the first is treated as a typo and cleared, not as a run
   going backwards.
 
 Only all-day work can run across days. A task with a clock time is a block, and
 a block belongs to one day — so the two fields swap places rather than stacking
 up, and setting one clears the other.
-
-### Tracking hours
-
-Hit **Start** for a stopwatch, or **+15m / +30m / +1h** to log time you already
-spent. A running timer shows in the top bar wherever you are, and keeps counting
-even if you close the browser — it picks up where it left off.
 
 ### Labels — one per client
 
@@ -308,12 +397,13 @@ one closes it again. `Esc` closes the dropdown before it closes the card.
   remaining label can't be deleted at all.
 - **+ New label** at the bottom adds a client. From inside a card it's assigned
   to that card straight away.
-- In the **sidebar**, clicking a row filters instead: it hides everything
-  carrying that label so you can focus, and clicking again brings it back. The
-  counts are per space.
+- In the **⚑ menu**, clicking a row filters instead: it hides everything
+  carrying that label so you can focus, and clicking again brings it back. A
+  dot appears on the flag whenever something is filtered, so you can't leave
+  work hidden and forget. The counts are per space.
 
-With a lot of clients the sidebar list scrolls rather than squeezing the
-Unscheduled pile.
+The menu used to be a permanent panel in the sidebar, which cost a third of it
+for something you touch occasionally. The Unscheduled pile has that room now.
 
 Searching matches label names, so typing a client's name finds their work.
 
@@ -328,11 +418,17 @@ Searching matches label names, so typing a client's name finds their work.
 | `S` | Switch between Work and Personal |
 | `1` `2` `3` `4` | Day / Week / Month / Year |
 | `5` | Board (press again to go back) |
+| `6` | To do wall (press again to go back) |
+| `7` | Timeline — eight weeks (press again to go back) |
 | `←` `→` | Previous / next period (calendar views) |
 | `T` | Today |
 | `/` | Search |
-| `Esc` | Close the task window |
+| `\` | Show or hide the sidebar |
+| `?` | The list of keys, on screen |
+| `Esc` | Close the card — or just the menu inside it |
 | `⌘S` | Export a backup |
+
+Press `?` at any time rather than coming back here.
 
 ---
 
@@ -343,7 +439,8 @@ build step, no dependencies — open any file and edit it.
 
 ```
 index.html            markup + the script tags, in load order
-start.command         the launcher you double-click
+start.command         the launcher you double-click on a Mac
+start.bat             the same, for Windows
 server.py             serves the folder and handles saving to disk
 css/
   tokens.css          colours, spacing, light/dark themes
@@ -351,12 +448,15 @@ css/
   layout.css          app shell and top bar
   spaces.css          the Work / Personal switch
   sidebar.css         quick-add, unscheduled list, labels
-  calendar.css        day/week grid, month grid, year overview
+  calendar.css        month grid, year overview
+  timeline.css        day and week, along a horizontal axis
   board.css           lists and cards
+  todo.css            the to-do wall
   editor.css          the two-pane task window
   checklist.css       the task list inside a card
   labels.css          the client-label picker
   hover.css           the hover preview
+  sheet.css           the archive and keyboard overlays
 js/
   core/
     util.js           dates, formatting, colour maths, event bus
@@ -368,24 +468,28 @@ js/
   ui/
     dnd.js            dragging and resizing, incl. board lists
     chips.js          the three task visuals
-    timer.js          stopwatch and hour logging
     preview.js        thumbnails and file preview
     checklist.js      the task list inside a card
     labels.js         client labels: stripes, picker, editor
     hover.js          the preview shown on resting a task
+    archive.js        finished work, put away
+    shortcuts.js      the list of keys
     editor.js         the task window
     spaceswitch.js    the Work / Personal switch
     sidebar.js        sidebar rendering
   views/
-    grid.js           time-grid geometry and overlap packing
-    day-week.js       day and week
+    grid.js           which hours to draw, and snapping
+    timeline.js       day and week, as horizontal bars
     month.js          month
     year.js           year
     board.js          lists of cards
+    todo.js           the to-do wall
   app.js              boot, top bar, keyboard, render
 ```
 
-`server.py` binds to `127.0.0.1` only, so nothing outside this Mac can reach it.
+`server.py` binds to `127.0.0.1` only, so nothing outside the machine running it
+can reach it — which is why it needs no password. Syncing the folder does not
+change that: each computer still talks only to its own copy.
 It exposes five endpoints — read and write `data.json`, save a file, move a file
 between folders, delete a file — and nothing else. Names coming from the browser
 are stripped of any directory part, space and project names are flattened to a

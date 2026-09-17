@@ -23,9 +23,12 @@ ORG.app = (() => {
 
     U.$$("#views button").forEach(b => b.classList.toggle("on", b.dataset.view === st.settings.view));
     U.$("#boardbtn").classList.toggle("on", st.settings.view === "board");
+    U.$("#todobtn").classList.toggle("on", st.settings.view === "todo");
+    U.$("#tlbtn").classList.toggle("on", st.settings.view === "timeline");
 
-    /* the board has no date range, so date navigation doesn't apply to it */
-    const dated = st.settings.view !== "board";
+    /* neither the board nor the wall has a date range, so date navigation
+       doesn't apply to either */
+    const dated = !["board", "todo"].includes(st.settings.view);
     ["#prev", "#next", "#today"].forEach(sel => {
       const n = U.$(sel);
       n.disabled = !dated;
@@ -57,17 +60,28 @@ ORG.app = (() => {
     else if (view === "year"){
       p.append(String(cursor.getFullYear()));
     }
-    else {
+    else if (view === "board"){
       const open = ORG.store.boardTasks().filter(t => !t.done).length;
       p.append("Board");
       p.append(U.el("span", "sub", `${open} open`));
+    }
+    else if (view === "timeline"){
+      const a = U.startOfWeek(cursor);
+      const b = U.addDays(a, ORG.views.tlGeom.SPAN_DAYS - 1);
+      p.append(`${a.getDate()} ${U.MON_SHORT[a.getMonth()]} – ${b.getDate()} ${U.MON_SHORT[b.getMonth()]}`);
+      p.append(U.el("span", "sub", "8 weeks"));
+    }
+    else {
+      const due = ORG.store.todoTasks().filter(t => t.due && !t.done).length;
+      p.append("To do");
+      p.append(U.el("span", "sub", due ? `${due} with a deadline` : "no deadlines"));
     }
   }
 
   function renderMain(){
     const main = U.$("#main");
-    const keepScroll = U.$(".tg-scroll")?.scrollTop;
-    const keepPan    = U.$(".tg-pan")?.scrollLeft;
+    const keepScroll = U.$(".tl-scroll")?.scrollLeft;   // the timeline runs sideways
+    const keepPan    = U.$(".todo-scroll")?.scrollLeft;
 
     main.innerHTML = "";
 
@@ -89,20 +103,24 @@ ORG.app = (() => {
       case "board":
         main.append(ORG.views.board());
         break;
+      case "todo":
+        main.append(ORG.views.todo());
+        break;
+      case "timeline":
+        main.append(ORG.views.timeGrid(
+          Array.from({ length:ORG.views.tlGeom.SPAN_DAYS },
+                     (_, i) => U.addDays(U.startOfWeek(cursor), i)), true));
+        break;
     }
 
-    /* keep the scroll position, or open near the current hour first time */
-    const sc = U.$(".tg-scroll");
-    if (sc){
-      sc.scrollTop = keepScroll != null
-        ? keepScroll
-        : Math.max(0, ORG.grid.minToY(Math.max(ORG.grid.dayStart(), new Date().getHours() - 2) * 60));
-    }
+    /* hold the scroll, or ticking a task would throw you back to the
+       start of the day every time. timeline.js does the first-open
+       scroll itself, so only restore a position we actually had. */
+    const sc = U.$(".tl-scroll");
+    if (sc && keepScroll != null) sc.scrollLeft = keepScroll;
 
-    /* and the sideways one, or ticking a task on a wide week would throw
-       you back to Monday every time */
-    const pan = U.$(".tg-pan");
-    if (pan && keepPan != null) pan.scrollLeft = keepPan;
+    const wall = U.$(".todo-scroll");
+    if (wall && keepPan != null) wall.scrollLeft = keepPan;
 
     ORG.views.drawNow();
   }
@@ -115,12 +133,16 @@ ORG.app = (() => {
     ORG.store.save();
   }
 
-  /** Board is a toggle — press it again to drop back to the calendar you left. */
-  function toggleBoard(){
+  /**
+   * Board and To do are toggles — press again to drop back to whichever
+   * calendar view you came from. `lastDated` only ever remembers a dated
+   * view, so bouncing between the two undated ones can't strand you.
+   */
+  function toggle(view){
     const s = ORG.store.state.settings;
-    if (s.view === "board") return setView(s.lastDated || "week");
-    s.lastDated = s.view;
-    setView("board");
+    if (s.view === view) return setView(s.lastDated || "week");
+    if (!["board", "todo", "timeline"].includes(s.view)) s.lastDated = s.view;
+    setView(view);
   }
 
   function goto(date, view){
@@ -132,7 +154,7 @@ ORG.app = (() => {
   function step(dir){
     const view = ORG.store.state.settings.view;
     if (view === "day")   cursor = U.addDays(cursor, dir);
-    if (view === "week")  cursor = U.addDays(cursor, 7 * dir);
+    if (view === "week" || view === "timeline") cursor = U.addDays(cursor, 7 * dir);
     if (view === "month") cursor = new Date(cursor.getFullYear(), cursor.getMonth() + dir, 1);
     if (view === "year")  cursor = new Date(cursor.getFullYear() + dir, cursor.getMonth(), 1);
     render();
@@ -169,6 +191,20 @@ ORG.app = (() => {
   /** Flip to the other work area. */
   const otherSpace = () => ORG.store.setSpace(ORG.spaces.other(ORG.store.space()).id);
 
+  /** Show or hide the sidebar. Remembered, so it stays how you left it. */
+  function toggleSidebar(){
+    const s = ORG.store.state.settings;
+    s.sidebar = !s.sidebar;
+    applySidebar();
+    ORG.store.save();
+  }
+
+  function applySidebar(){
+    const on = ORG.store.state.settings.sidebar !== false;
+    U.$("#app").classList.toggle("no-side", !on);
+    U.$("#sidebtn").classList.toggle("on", !on);
+  }
+
   /* ============================================================
      WIRING
      ============================================================ */
@@ -182,7 +218,10 @@ ORG.app = (() => {
       if (b) setView(b.dataset.view);
     });
 
-    U.$("#boardbtn").addEventListener("click", toggleBoard);
+    U.$("#sidebtn").addEventListener("click", toggleSidebar);
+    U.$("#boardbtn").addEventListener("click", () => toggle("board"));
+    U.$("#todobtn").addEventListener("click", () => toggle("todo"));
+    U.$("#tlbtn").addEventListener("click", () => toggle("timeline"));
 
     U.$("#newtask").addEventListener("click", () => {
       const view = ORG.store.state.settings.view;
@@ -209,7 +248,9 @@ ORG.app = (() => {
   function wireKeyboard(){
     document.addEventListener("keydown", e => {
       if (e.key === "Escape"){
-        // the label dropdown first, the card only if nothing was open
+        /* innermost thing first, so Escape always closes exactly one layer */
+        if (ORG.shortcuts.isOpen()) return ORG.shortcuts.close();
+        if (ORG.archive.isOpen())   return ORG.archive.close();
         if (ORG.editor.dismissLabels()) return;
         if (ORG.editor.isOpen()) ORG.editor.close();
         return;
@@ -226,14 +267,18 @@ ORG.app = (() => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
 
       const k = e.key.toLowerCase();
-      if (e.key === "/")          { e.preventDefault(); U.$("#search").focus(); }
+      if (e.key === "?")          { e.preventDefault(); ORG.shortcuts.toggle(); }
+      else if (e.key === "\\")   { e.preventDefault(); toggleSidebar(); }
+      else if (e.key === "/")     { e.preventDefault(); U.$("#search").focus(); }
       else if (e.key === "ArrowLeft")  step(-1);
       else if (e.key === "ArrowRight") step(1);
       else if (k === "t")         today();
       else if (k === "n")         { e.preventDefault(); U.$("#newtask").click(); }
       else if (k === "a")         { e.preventDefault(); U.$("#quickadd").focus(); }
       else if (k === "s")         { e.preventDefault(); otherSpace(); }
-      else if (e.key === "5") toggleBoard();
+      else if (e.key === "5") toggle("board");
+      else if (e.key === "6") toggle("todo");
+      else if (e.key === "7") toggle("timeline");
       else if ("1234".includes(e.key)) setView(["day", "week", "month", "year"][+e.key - 1]);
     });
   }
@@ -254,6 +299,25 @@ ORG.app = (() => {
       bannerDismissed = true;
       U.$("#filebanner").hidden = true;
     });
+
+    U.$("#sync-reload").addEventListener("click", () => location.reload());
+    U.$("#sync-export").addEventListener("click", () => ORG.backup.exportBundle());
+  }
+
+  /**
+   * A synced copy of data.json overtook the one this page loaded, so saving
+   * has stopped. Not dismissable on purpose: everything typed from here on
+   * is going nowhere, and quietly letting that continue is how work is lost.
+   */
+  function showStale(){
+    const s = ORG.store.stale;
+    if (!s) return;
+    const when = s.savedAt ? U.fmtWhen(s.savedAt) : null;
+    U.$("#sync-who").textContent =
+      `${s.savedBy} saved this folder${when ? " at " + when : ""} while it was open here. `
+      + `Nothing more will be saved on this computer until you reload — `
+      + `that picks up their version. Export first if you've changed things here.`;
+    U.$("#syncbanner").hidden = false;
   }
 
   /* ============================================================
@@ -266,8 +330,11 @@ ORG.app = (() => {
 
     ORG.sidebar.init();
     ORG.editor.init();
-    ORG.timer.init();
     ORG.hover.init();
+    ORG.labels.initMenu();
+    ORG.archive.init();
+    ORG.shortcuts.init();
+    applySidebar();
     wireTopbar();
     wireKeyboard();
     wireBanner();
@@ -276,10 +343,12 @@ ORG.app = (() => {
     U.bus.on("change", render);
     U.bus.on("theme", applyTheme);
     U.bus.on("storage", checkEnvironment);
+    U.bus.on("stale", showStale);
 
     if (!ORG.store.storageOK) ORG.store.setSaved("Storage blocked — export!", true);
 
     render();
+    U.$("#arch-n").textContent = ORG.store.archivedCount() || "";
     setInterval(() => ORG.views.drawNow(), 30000);
   }
 

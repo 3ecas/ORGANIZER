@@ -10,10 +10,17 @@ ORG.store = (() => {
   const U = ORG.util;
   const KEY = "organizer.v2";
   const VERSION = 2;
+  const MAX_SPAN = 3;          // a card may cover up to 3x3 cells
 
   let state = null;
   let query = "";
   let storageOK = true;
+
+  /* Which revision of data.json we're working from, and whether another
+     device has since moved past it. Only meaningful in disk mode — see
+     readDisk/persistNow below. */
+  let diskRev = 0;
+  let stale = null;          // { savedBy, savedAt } once we've been overtaken
 
   /* ============================================================
      MODEL
@@ -29,7 +36,6 @@ ORG.store = (() => {
    *  start     "HH:MM" | null        null = untimed (all-day strip)
    *  dur       minutes               start + dur is the end time shown in the form
    *  due       "YYYY-MM-DD" | null   deadline, independent of `date`
-   *  entries   [{id, min, note, at}] logged work
    *  files     [{id, name, size, type, at}]  blobs live in core/files.js
    */
   function normalizeTask(t){
@@ -52,7 +58,7 @@ ORG.store = (() => {
       subtitle: String(t.subtitle ?? "").slice(0, 160),
       notes:  String(t.notes ?? ""),
       date, endDate, start,
-      dur:    Number.isFinite(+t.dur) ? U.clamp(+t.dur, 15, 1440) : 60,
+      dur:    t.dur != null && Number.isFinite(+t.dur) ? U.clamp(+t.dur, 15, 1440) : 60,
       due:    isDate(t.due) ? t.due : null,
       /* which label (client) this belongs to. `color` is what the field
          was called before labels had names, and still reads fine. */
@@ -62,6 +68,24 @@ ORG.store = (() => {
       /* board position: which list it sits in, and where in that list */
       status: typeof t.status === "string" ? t.status : null,
       order:  Number.isFinite(+t.order) ? +t.order : 0,
+      /* where this card sits on the To-do wall, and how many cells it
+         covers. Grid cells, not pixels, so a card lands where you left it
+         at the size you left it, whatever the window size. */
+      pin: t.pin && Number.isFinite(+t.pin.x) && Number.isFinite(+t.pin.y)
+        ? { x: Math.max(0, Math.round(+t.pin.x)), y: Math.max(0, Math.round(+t.pin.y)) }
+        : null,
+      span: {
+        w: U.clamp(Math.round(+(t.span?.w) || 1), 1, MAX_SPAN),
+        h: U.clamp(Math.round(+(t.span?.h) || 1), 1, MAX_SPAN),
+      },
+      /* Which lane its bar sits on along the timeline. null means "wherever
+         there's room" — drag a bar up or down and from then on that's where
+         it lives, whatever else is on screen. */
+      /* `== null` first: +null is 0, which IS finite, so a plain
+         Number.isFinite check would quietly pin every unplaced task to
+         lane 0 the next time it was loaded — everything on one row. */
+      lane: t.lane == null || !Number.isFinite(+t.lane)
+        ? null : Math.max(0, Math.round(+t.lane)),
       /* the checklist inside the card — what actually has to be done */
       steps: Array.isArray(t.steps)
         ? t.steps.map(s => ({
@@ -69,14 +93,6 @@ ORG.store = (() => {
             text: String(s.text ?? "").slice(0, 300),
             done: !!s.done,
           }))
-        : [],
-      entries: Array.isArray(t.entries)
-        ? t.entries.map(e => ({
-            id:   e.id || U.uid(),
-            min:  U.clamp(Math.round(+e.min || 0), 0, 100000),
-            note: String(e.note ?? ""),
-            at:   +e.at || Date.now(),
-          })).filter(e => e.min > 0)
         : [],
       files: Array.isArray(t.files)
         ? t.files.map(f => ({
@@ -90,13 +106,14 @@ ORG.store = (() => {
             path: typeof f.path === "string" && /^(FILES|files)\//.test(f.path) ? f.path : null,
           }))
         : [],
+      /* When it was put away. Archived work stays in data.json — it is the
+         record of what you did — but it is out of every view until you
+         ask for it. 0 means still live. */
+      archivedAt: +t.archivedAt || 0,
       createdAt: +t.createdAt || Date.now(),
       updatedAt: +t.updatedAt || Date.now(),
     };
   }
-
-  /** Total minutes logged against a task. */
-  const logged = t => t.entries.reduce((a, e) => a + e.min, 0);
 
   /* ============================================================
      LABELS
@@ -203,7 +220,7 @@ ORG.store = (() => {
 
   /** How many open tasks carry this label, in the space on screen. */
   const labelCount = id =>
-    state.tasks.filter(t => t.space === space() && t.label === id && !t.done).length;
+    live().filter(t => t.space === space() && t.label === id && !t.done).length;
 
   /* ============================================================
      CHECKLIST — the steps inside a card
@@ -273,7 +290,6 @@ ORG.store = (() => {
         notes:"3:42 track. Client wants a first cut by Friday.",
         date:today, start:"09:30", dur:120, due:fri, label:"client-a",
         status:"doing", order:0,
-        entries:[{ id:U.uid(), min:95, note:"first pass", at: now - 86400000 }],
         steps:[
           { id:U.uid(), text:"Listen through, mark the beats", done:true },
           { id:U.uid(), text:"Moodboard + colour script",      done:true },
@@ -320,13 +336,13 @@ ORG.store = (() => {
       hidden: [],
       /* board lists, one independent set per space */
       columns: Object.fromEntries(ORG.spaces.all().map(s => [s.id, baseColumns()])),
-      timer: null,                    // { taskId, since } while a timer runs
       settings: {
         theme: "dark",
         space: ORG.spaces.DEFAULT,    // the work area currently on screen
         view: "week",
         lastDated: "week",            // calendar view to return to when leaving the board
         hideDone: false,
+        sidebar: true,                // the sidebar is showing
         dayStart: 7,                  // first hour drawn in day/week
         dayEnd: 23,                   // last hour drawn
       },
@@ -372,7 +388,6 @@ ORG.store = (() => {
       labels: hydrateLabels(raw.labels, d.labels),
       hidden: Array.isArray(raw.hidden) ? raw.hidden : [],
       columns: hydrateColumns(raw.columns, d.columns),
-      timer: raw.timer && raw.timer.taskId ? raw.timer : null,
       settings: { ...d.settings, ...(raw.settings || {}),
                   space: ORG.spaces.idOf((raw.settings || {}).space) },
     }));
@@ -384,6 +399,7 @@ ORG.store = (() => {
       const res = await fetch("/api/state");
       const raw = await res.json();
       if (!res.ok || raw.error) throw new Error(raw.error || res.status);
+      diskRev = +raw.rev || 0;          // what we must still match to save
       return Array.isArray(raw.tasks) ? raw : null;
     } catch(e){
       console.warn("Could not read data.json.", e);
@@ -422,14 +438,27 @@ ORG.store = (() => {
 
   async function persistNow(){
     if (ORG.files.onDisk){
+      /* Once another device has overtaken us, every further write would
+         only widen the gap. Stop until the page is reloaded. */
+      if (stale) return;
+
       try {
-        const res = await fetch("/api/state", {
+        const res = await fetch(`/api/state?rev=${diskRev}`, {
           method: "PUT",
           headers: { "Content-Type":"application/json" },
           body: JSON.stringify(state),
         });
         const out = await res.json();
+
+        if (res.status === 409){
+          stale = { savedBy: out.savedBy, savedAt: out.savedAt };
+          setSaved(`Not saved — ${out.savedBy} got there first`, true);
+          U.bus.emit("stale");
+          return;
+        }
         if (!res.ok || out.error) throw new Error(out.error || res.status);
+
+        diskRev = +out.rev || diskRev + 1;
         setSaved("Saved to this folder", false);
       } catch(e){
         console.error("Write failed", e);
@@ -487,7 +516,7 @@ ORG.store = (() => {
 
   /** What to show on a space's button: open tasks, or search hits. */
   function tally(id){
-    const mine = state.tasks.filter(t => t.space === id);
+    const mine = live().filter(t => t.space === id);
     return {
       open: mine.filter(t => !t.done).length,
       hits: query ? mine.filter(matches).length : null,
@@ -507,8 +536,11 @@ ORG.store = (() => {
         || t.files.some(f => f.name.toLowerCase().includes(query));
   };
 
+  /** Everything still in play — archived work is excluded everywhere. */
+  const live = () => state.tasks.filter(t => !t.archivedAt);
+
   /** Tasks in this space passing the label filter, hide-done and search. */
-  const visible = () => state.tasks.filter(t =>
+  const visible = () => live().filter(t =>
     t.space === space() &&
     !state.hidden.includes(t.label) &&
     !(state.settings.hideDone && t.done) &&
@@ -540,6 +572,20 @@ ORG.store = (() => {
   };
 
   /**
+   * Pin a bar to a lane on the timeline, or let go of it again.
+   *
+   * Deliberately unpoliced: two bars may share a lane and overlap if that's
+   * where you put them. Auto-packing is only ever a starting suggestion for
+   * bars you haven't placed yourself.
+   */
+  function setLane(t, lane){
+    const n = lane == null ? null : Math.max(0, Math.round(lane));
+    if (t.lane === n) return;
+    t.lane = n;
+    touch(t);
+  }
+
+  /**
    * Move a task to another day, carrying the rest of its run with it —
    * dragging the front of a three-day job should slide all three, not
    * stretch it backwards from a fixed end.
@@ -554,6 +600,40 @@ ORG.store = (() => {
 
   const setQuery = q => { query = (q || "").trim().toLowerCase(); U.bus.emit("change"); };
   const getQuery = () => query;
+
+  /* ============================================================
+     THE ARCHIVE
+     Finished work doesn't need deleting — it's the record of what
+     you did, and it's what the hours and the files hang off. It
+     just needs to be out of the way.
+     ============================================================ */
+  const archived = () => state.tasks
+    .filter(t => t.archivedAt)
+    .sort((a, b) => b.archivedAt - a.archivedAt);
+
+  const archivedCount = () => state.tasks.reduce((n, t) => n + (t.archivedAt ? 1 : 0), 0);
+
+  function archive(t){
+    if (t.archivedAt) return;
+    t.archivedAt = Date.now();
+    touch(t);
+  }
+
+  function restore(t){
+    if (!t.archivedAt) return;
+    t.archivedAt = 0;
+    /* its old cell may well be taken by now — let the wall re-place it */
+    t.pin = null;
+    touch(t);
+  }
+
+  /** Everything ticked complete in this space. The Done column's bulk action. */
+  function archiveDone(){
+    const doing = live().filter(t => t.space === space() && t.done);
+    doing.forEach(t => { t.archivedAt = Date.now(); });
+    if (doing.length) save();
+    return doing.length;
+  }
 
   /* ============================================================
      MUTATIONS
@@ -575,7 +655,6 @@ ORG.store = (() => {
   function remove(id){
     const t = byId(id);
     if (t) t.files.forEach(f => ORG.files.del(f.id, f.path));
-    if (state.timer && state.timer.taskId === id) state.timer = null;
     state.tasks = state.tasks.filter(x => x.id !== id);
     save();
   }
@@ -592,8 +671,143 @@ ORG.store = (() => {
      object and editing either updates both.
      ============================================================ */
 
+  /* ============================================================
+     THE TO-DO WALL
+     Everything that isn't pinned to a time: work with no date yet,
+     plus anything carrying a deadline. Cards are placed by hand,
+     so this is the one view whose layout is a decision rather
+     than a consequence.
+     ============================================================ */
+
+  /** Undated work, plus anything with a deadline. */
+  const onWall = t => !t.date || !!t.due;
+
+  const todoTasks = () => visible().filter(onWall);
+
+  /** Soonest deadline first, then undated, then newest — the order a
+      freshly tidied wall reads in. */
+  function wallOrder(a, b){
+    if (a.done !== b.done) return a.done - b.done;
+    if (a.due && b.due) return a.due.localeCompare(b.due);
+    if (a.due) return -1;
+    if (b.due) return 1;
+    return b.createdAt - a.createdAt;
+  }
+
+  /* ---------- footprints ----------
+     A card covers span.w x span.h cells from its pin. Everything that
+     places, moves or resizes one has to reason in whole footprints, or
+     a big card would silently sit on top of a small one. */
+
+  const cellsOf = (cell, span) => {
+    const out = [];
+    for (let i = 0; i < span.w; i++)
+      for (let j = 0; j < span.h; j++) out.push(`${cell.x + i},${cell.y + j}`);
+    return out;
+  };
+
+  /** Cards on this wall other than `t`, with the cells each one covers. */
+  function others(t, drawn){
+    return (drawn || state.tasks.filter(o => o.space === t.space && onWall(o)))
+      .filter(o => o !== t && o.pin)
+      .map(o => ({ task:o, cells:new Set(cellsOf(o.pin, o.span)) }));
+  }
+
+  /** Would `t` at this cell and size land clear of everything else? */
+  function footprintFree(t, cell, span, drawn){
+    const want = cellsOf(cell, span);
+    return !others(t, drawn).some(o => want.some(c => o.cells.has(c)));
+  }
+
+  /**
+   * Resize a card, stopping short of anything in the way rather than
+   * covering it. Growing into occupied cells would hide work.
+   */
+  function setSpan(t, w, h){
+    let nw = U.clamp(Math.round(w), 1, MAX_SPAN);
+    let nh = U.clamp(Math.round(h), 1, MAX_SPAN);
+    if (!t.pin){ t.span = { w:nw, h:nh }; return touch(t); }
+
+    while (nw > 1 && !footprintFree(t, t.pin, { w:nw, h:nh })) nw--;
+    while (nh > 1 && !footprintFree(t, t.pin, { w:nw, h:nh })) nh--;
+
+    if (t.span.w === nw && t.span.h === nh) return;
+    t.span = { w:nw, h:nh };
+    touch(t);
+  }
+
+  /**
+   * Put a card on a cell. If something is already there the two swap —
+   * dropping onto an occupied cell and having a card vanish underneath
+   * would be worse.
+   *
+   * `from` is the cell the dragged card was actually sitting on, which
+   * the view knows even when the card had no pin of its own. Without it
+   * the displaced card would lose its place entirely and reappear at the
+   * far end of the wall, which reads as a bug however correct it is.
+   */
+  function setPin(t, x, y, from, swapId){
+    const to = { x: Math.max(0, Math.round(x)), y: Math.max(0, Math.round(y)) };
+    if (t.pin && t.pin.x === to.x && t.pin.y === to.y) return;
+
+    /* The view names whatever card is drawn on the target cell, which
+       catches ones the wall auto-placed as well as ones you put there.
+       Falling back to a pin search alone would miss half of them. */
+    const sitting = (swapId && state.tasks.find(o => o.id === swapId && o !== t))
+      || state.tasks.find(o =>
+           o !== t && o.space === t.space && onWall(o) &&
+           o.pin && o.pin.x === to.x && o.pin.y === to.y);
+
+    /* Swapping only makes sense between cards of the same size. Anything
+       else and the move has to land on clear ground — the view refuses it
+       before we get here, but a stray call shouldn't bury a card either. */
+    if (sitting && (sitting.span.w !== t.span.w || sitting.span.h !== t.span.h)) return;
+
+    if (sitting){
+      const back = from || t.pin;
+      sitting.pin = back ? { x:back.x, y:back.y } : null;
+    }
+    t.pin = to;
+    touch(t);
+  }
+
+  /**
+   * Re-flow the whole wall into reading order, `cols` cards wide.
+   * First-fit rather than a plain sequence, because cards are different
+   * sizes now — a wide one simply skips a row that can't hold it.
+   */
+  function tidyPins(cols){
+    const wide = Math.max(1, cols | 0);
+    const taken = new Set();
+
+    const fits = (x, y, w, h) => {
+      if (x + w > wide) return false;
+      for (let i = 0; i < w; i++)
+        for (let j = 0; j < h; j++) if (taken.has(`${x+i},${y+j}`)) return false;
+      return true;
+    };
+
+    for (const t of todoTasks().sort(wallOrder)){
+      const w = Math.min(t.span.w, wide), h = t.span.h;
+      let y = 0;
+      for (;;){
+        let put = false;
+        for (let x = 0; x <= wide - w; x++){
+          if (!fits(x, y, w, h)) continue;
+          t.pin = { x, y };
+          cellsOf(t.pin, { w, h }).forEach(c => taken.add(c));
+          put = true;
+          break;
+        }
+        if (put) break;
+        y++;
+      }
+    }
+    save();
+  }
+
   /** Label filter + search, but never hide-done: the board HAS a Done list. */
-  const boardTasks = () => state.tasks.filter(t =>
+  const boardTasks = () => live().filter(t =>
     t.space === space() && !state.hidden.includes(t.label) && matches(t)
   );
 
@@ -751,9 +965,14 @@ ORG.store = (() => {
     progress, addStep, updateStep, removeStep, moveStep, clearDoneSteps,
     get state(){ return state; },
     get storageOK(){ return storageOK; },
+    /** Set once a synced copy of data.json has moved past the one we loaded. */
+    get stale(){ return stale; },
     VERSION, KEY,
     load, save, setSaved, replaceState, defaults, normalizeTask, hydrate,
-    byId, visible, tasksOn, covers, spanDays, moveTo, logged, setQuery, getQuery,
+    byId, visible, live, tasksOn, covers, spanDays, moveTo, setQuery, getQuery,
+    archived, archivedCount, archive, restore, archiveDone,
+    todoTasks, wallOrder, setPin, setSpan, tidyPins, cellsOf, footprintFree, MAX_SPAN,
+    setLane,
     add, remove, touch,
   };
 })();

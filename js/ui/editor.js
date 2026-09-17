@@ -1,8 +1,8 @@
 /* ============================================================
    ui/editor.js
    The task modal.
-     LEFT  pane — every piece of information: status, colour,
-                  task list, start/end, deadline, hours logged, notes
+     LEFT  pane — every piece of information: client, board list,
+                  task list, start/end, deadline, notes
      RIGHT pane — attached files: thumbnail strip + large preview
 
    Edits apply immediately (there is no Save button). Text fields
@@ -51,7 +51,7 @@ ORG.editor = (() => {
   function close(){
     /* an untouched blank task is noise — bin it */
     if (task && !task.title.trim() && !task.subtitle.trim() && !task.notes.trim()
-        && !task.files.length && !task.entries.length && !task.steps.length){
+        && !task.files.length && !task.steps.length){
       ORG.store.remove(task.id);
     } else if (task){
       syncProjectFolder(task);          // follows a renamed project
@@ -86,8 +86,6 @@ ORG.editor = (() => {
     renderLabels();
     ORG.checklist.render(U.$("#m-steps"), task);
     syncScheduleFields();
-    refreshTimer();
-    renderEntries();
   }
 
   /** Which work area this task lives in. */
@@ -197,53 +195,6 @@ ORG.editor = (() => {
     const end   = U.parseTime(U.$("#m-end").value || endTime());
     task.dur = end > start ? Math.min(end - start, 1440 - start) : MIN_BLOCK;
     U.$("#m-end").value = endTime();
-  }
-
-  /* ============================================================
-     TIME TRACKING
-     ============================================================ */
-  function refreshTimer(){
-    if (!task) return;
-
-    const live = ORG.timer.isRunning(task.id);
-    const mins = ORG.timer.liveTotal(task);
-
-    const total = U.$("#m-tt-total");
-    total.textContent = U.fmtHM(mins);
-    total.classList.toggle("live", live);
-    U.$("#m-tt-of").textContent = live ? "logged · running" : "logged";
-
-    const btn = U.$("#m-tt-toggle");
-    btn.classList.toggle("live", live);
-    btn.innerHTML = live
-      ? `<svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1.5"/></svg>Stop`
-      : `<svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg>Start`;
-  }
-
-  function renderEntries(){
-    const box = U.$("#m-tt-list");
-    box.innerHTML = "";
-    if (!task.entries.length) return;
-
-    [...task.entries].sort((a, b) => b.at - a.at).forEach(e => {
-      const row = U.el("div", "tt-entry");
-      row.append(U.el("span", "e-min", U.fmtHM(e.min)));
-
-      const d = new Date(e.at);
-      row.append(U.el("span", "e-when", `${d.getDate()} ${U.MON_SHORT[d.getMonth()]}`));
-      row.append(U.el("span", "e-note", e.note || ""));
-
-      const del = U.el("button", "e-del", "×");
-      del.title = "Delete this entry";
-      del.addEventListener("click", () => {
-        ORG.timer.removeEntry(task, e.id);
-        renderEntries();
-        refreshTimer();
-      });
-      row.append(del);
-
-      box.append(row);
-    });
   }
 
   /* ============================================================
@@ -361,9 +312,12 @@ ORG.editor = (() => {
     U.$("#m-close").addEventListener("click", close);
     U.$("#scrim").addEventListener("click", close);
 
-    /* clicking anywhere else in the card closes the label dropdown */
+    /* Clicking anywhere else in the card closes the label dropdown. Same
+       reasoning as the topbar menu: the ✎ redraws the list, so the clicked
+       node is gone before this runs and only the event path still knows
+       the click came from inside. */
     U.$("#modal").addEventListener("click", e => {
-      if (!isOpen() || e.target.closest("#m-labels")) return;
+      if (!isOpen() || ORG.labels.cameFrom(e, "m-labels")) return;
       if (ORG.labels.closeMenu()) renderLabels();
     });
 
@@ -381,11 +335,20 @@ ORG.editor = (() => {
     U.$("#m-dup").addEventListener("click", () => {
       const copy = ORG.store.add({
         ...task, id:U.uid(), createdAt:Date.now(), updatedAt:Date.now(),
-        done:false, entries:[], files:[],          // a copy starts its own clock, its own files
+        done:false, files:[],                      // a copy starts with its own files
         title: task.title ? task.title + " (copy)" : "",
       });
-      U.toast("Duplicated — attachments and hours not copied");
+      U.toast("Duplicated — attachments not copied");
       open(copy.id);
+    });
+
+    U.$("#m-archive").addEventListener("click", () => {
+      const t = task;
+      task = null;                       // close without the blank-task sweep
+      U.$("#modal").classList.remove("on");
+      U.$("#scrim").classList.remove("on");
+      ORG.store.archive(t);
+      U.toast(`Archived — find it under the archive button`);
     });
 
     U.$("#m-del").addEventListener("click", () => {
@@ -457,20 +420,6 @@ ORG.editor = (() => {
       commit(true);
     });
 
-    /* --- time tracking --- */
-    U.$("#m-tt-toggle").addEventListener("click", () => {
-      ORG.timer.toggle(task.id);
-      refreshTimer();
-      renderEntries();
-    });
-    U.$$("#m-tt-quick button").forEach(b => {
-      b.addEventListener("click", () => {
-        ORG.timer.addManual(task, +b.dataset.min);
-        refreshTimer();
-        renderEntries();
-      });
-    });
-
     /* --- notes --- */
     U.$("#m-notes").addEventListener("input", e => { task.notes = e.target.value; commit(); });
 
@@ -518,7 +467,7 @@ ORG.editor = (() => {
 
   return {
     init, open, close, isOpen, dismissLabels,
-    refreshTimer, refreshFiles,
+    refreshFiles,
     lastLabel: () => lastLabel,
     current: () => task,
   };

@@ -51,17 +51,6 @@ ORG.ui = (() => {
     return p;
   }
 
-  /* ---------- logged-hours pill ---------- */
-  function timePill(t){
-    const mins = ORG.store.logged(t);
-    if (!mins) return null;
-    const p = U.el("span", "pill time");
-    p.append(U.icon(U.PATH.clock, "glyph"));
-    p.append(U.fmtHM(mins));
-    p.title = "Time logged";
-    return p;
-  }
-
   /** "3/6" checklist progress, shown on cards and in the sidebar. */
   function stepsPill(t){
     const { done, total } = ORG.store.progress(t);
@@ -70,6 +59,96 @@ ORG.ui = (() => {
     p.append(U.icon("M5 13l4 4L19 7", "glyph"), `${done}/${total}`);
     p.title = `${done} of ${total} steps done`;
     return p;
+  }
+
+  /* ============================================================
+     THE CHECKLIST ON A CARD
+     The compact, tickable version — the board and the to-do wall
+     both draw it, so it lives here rather than in either of them.
+     (ui/checklist.js is the editable one inside the modal.)
+     ============================================================ */
+
+  /**
+   * Which slice of a long list to show: always in order, starting at the
+   * first thing not done yet, so a card says where you are and what's next
+   * rather than showing steps finished last week.
+   */
+  function stepWindow(t, max){
+    if (t.steps.length <= max) return { rows:t.steps, hidden:0 };
+    const next = Math.max(0, t.steps.findIndex(s => !s.done));
+    const from = Math.min(next, t.steps.length - max);
+    return { rows:t.steps.slice(from, from + max), hidden:t.steps.length - max };
+  }
+
+  function stepRow(t, s){
+    const row = U.el("div", "cs-item" + (s.done ? " on" : ""));
+
+    /* class "check" on purpose: the drag handlers and the card's own click
+       handler both skip anything inside one, so ticking a step can't start
+       a drag or open the card */
+    const box = U.el("button", "check cs-check" + (s.done ? " on" : ""));
+    box.innerHTML = `<svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    box.title = s.done ? "Not done after all" : "Mark this step done";
+    box.addEventListener("click", e => {
+      e.stopPropagation();
+      ORG.store.updateStep(t, s.id, { done: !s.done });
+    });
+    row.append(box);
+    row.append(U.el("span", "cs-text", s.text || "Untitled step"));
+    return row;
+  }
+
+  /** Progress bar plus the next few steps. Null when there are none. */
+  function miniList(t, max = 6){
+    if (!t.steps.length) return null;
+
+    const { done, total } = ORG.store.progress(t);
+    const all = done === total;
+    const box = U.el("div", "card-steps");
+
+    const bar = U.el("div", "cs-bar");
+    const fill = U.el("i", all ? "all" : null);
+    fill.style.width = (done / total * 100) + "%";
+    bar.append(fill);
+
+    const head = U.el("div", "cs-top");
+    head.append(bar, U.el("span", "cs-count" + (all ? " all" : ""), `${done}/${total}`));
+    box.append(head);
+
+    const { rows, hidden } = stepWindow(t, max);
+    const items = U.el("div", "cs-items");
+    rows.forEach(st => items.append(stepRow(t, st)));
+    box.append(items);
+
+    if (hidden){
+      const more = U.el("div", "cs-more", `+${hidden} more`);
+      more.title = "Open the card for the whole list";
+      box.append(more);
+    }
+    return box;
+  }
+
+  /**
+   * When a task sits on the calendar, in words.
+   * `short` trims it for a card; the long form is for the hover preview.
+   */
+  function whenText(t, short){
+    if (!t.date) return short ? "No date" : "Not on the calendar";
+
+    const d = U.parseYmd(t.date);
+    const day = short
+      ? `${U.DOW[U.dowMon(d)]} ${d.getDate()} ${U.MON_SHORT[d.getMonth()]}`
+      : `${U.DOW[U.dowMon(d)]} ${d.getDate()} ${U.MON_SHORT[d.getMonth()]}`;
+
+    if (t.endDate){
+      const e = U.parseYmd(t.endDate);
+      const span = `${d.getDate()} ${U.MON_SHORT[d.getMonth()]} – ${e.getDate()} ${U.MON_SHORT[e.getMonth()]}`;
+      return short ? span : `${span}  ·  ${ORG.store.spanDays(t)} days, all day`;
+    }
+    if (!t.start) return short ? `${day} · all day` : `${day}  ·  all day`;
+
+    const end = U.fmtMin(Math.min(U.parseTime(t.start) + t.dur, 1439));
+    return short ? `${day} · ${t.start}` : `${day}  ·  ${t.start} – ${end}`;
   }
 
   /** Small paperclip shown when a task has attachments. */
@@ -123,54 +202,6 @@ ORG.ui = (() => {
     return n;
   }
 
-  /* ============================================================
-     BLOCK — a timed task in the day/week grid
-     `it` comes from grid.packColumns(): { t, s, e, col, cols }
-     ============================================================ */
-  function block(it){
-    const t = it.t;
-    const G = ORG.grid;
-
-    const top = G.minToY(it.s);
-    const h   = Math.max(t.dur / 60 * G.hourPx() - 2, 16);
-
-    const n = U.el("div", "block" + (t.done ? " done" : "") + (h < 32 ? " tiny" : ""));
-    n.dataset.id = t.id;
-    n.style.top    = top + "px";
-    n.style.height = h + "px";
-    /* 3px inset each side, so side-by-side blocks sit 6px apart and neither
-       one's text ever runs up against the next one's edge */
-    n.style.left   = `calc(${(it.col / it.cols) * 100}% + 3px)`;
-    n.style.width  = `calc(${(1 / it.cols) * 100}% - 6px)`;
-    tint(n, t);
-
-    n.append(U.el("div", "bt", t.title || "Untitled"));
-    /* the block has vertical room, so the subtitle gets its own line —
-       but only once the block is tall enough to show it without crowding */
-    if (t.subtitle && h >= 48) n.append(U.el("div", "bs", t.subtitle));
-
-    const m = U.el("div", "bm");
-    m.append(`${t.start}–${U.fmtMin(it.e % 1440)}`);
-    const c = clip(t); if (c) m.append(c);
-
-    /* tracked time, glyphed so it can't be misread as part of the range */
-    const mins = ORG.store.logged(t);
-    if (mins && h >= 32){
-      const w = U.el("span");
-      w.style.cssText = "display:inline-flex;align-items:center;gap:3px";
-      w.append(U.icon(U.PATH.clock, "glyph"), U.fmtHM(mins));
-      w.title = "Time logged";
-      m.append(w);
-    }
-    n.append(m);
-
-    const grip = U.el("div", "grip");
-    grip.addEventListener("pointerdown", e => ORG.dnd.beginResize(e, t));
-    n.append(grip);
-
-    wire(n, t);
-    return n;
-  }
-
-  return { tint, check, chip, block, duePill, timePill, stepsPill, clip };
+  return { tint, check, chip, duePill, stepsPill, clip,
+           miniList, whenText };
 })();

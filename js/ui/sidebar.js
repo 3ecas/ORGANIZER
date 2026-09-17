@@ -64,7 +64,6 @@ ORG.sidebar = (() => {
     meta.append(U.el("span", null, ORG.store.labelName(t)));
     const steps = ORG.ui.stepsPill(t); if (steps) meta.append(steps);
     const due   = ORG.ui.duePill(t);   if (due)   meta.append(due);
-    const time  = ORG.ui.timePill(t);  if (time)  meta.append(time);
     const clip = ORG.ui.clip(t);
     if (clip){
       const w = U.el("span", null);
@@ -83,13 +82,6 @@ ORG.sidebar = (() => {
     });
     return n;
   }
-
-  /* ============================================================
-     LABELS
-     Drawn by ui/labels.js so the sidebar list and the picker inside
-     a card are literally the same rows and the same editor.
-     ============================================================ */
-  const renderLabels = () => ORG.labels.manager(U.$("#labels"));
 
   /* ============================================================
      WIRING  (run once)
@@ -121,7 +113,8 @@ ORG.sidebar = (() => {
   function render(){
     ORG.spaceswitch.render();
     renderInbox();
-    renderLabels();
+    /* the labels live in the topbar menu now — it keeps itself current */
+    ORG.labels.refreshMenu();
     U.$("#hidedone").classList.toggle("on", ORG.store.state.settings.hideDone);
   }
 

@@ -1,5 +1,5 @@
 /* ============================================================
-   layout.css — app shell, topbar, notice banner, drag ghost
+   layout.css — app shell, topbar, notice banner, dragging
    ============================================================ */
 
 #app{display:flex;flex-direction:column;height:100%}
@@ -7,28 +7,43 @@
 .main{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden;position:relative}
 .spacer{flex:1}
 
-/* ---------- topbar ---------- */
+/* ---------- topbar ----------
+   Three zones. The outer two both grow, so the middle one lands dead
+   centre however wide the window is and whatever is in the sides. */
 .topbar{
   height:var(--topbar);flex:0 0 auto;
-  display:flex;align-items:center;gap:14px;padding:0 14px;
+  display:flex;align-items:center;gap:12px;padding:0 14px;
   background:var(--panel);border-bottom:1px solid var(--line);
   position:relative;z-index:20;
 }
 
+.tb-zone{display:flex;align-items:center;gap:10px;min-width:0;white-space:nowrap}
+.tb-zone:first-child,
+.tb-zone.end{flex:1 1 0}
+.tb-zone.end{justify-content:flex-end}
+.tb-zone.end #today{margin-right:auto}   /* hugs the arrows from the right */
+.tb-zone.centre{flex:0 0 auto;gap:8px}
+
 .wordmark{
-  display:flex;align-items:center;gap:8px;padding-right:4px;user-select:none;
+  display:flex;align-items:center;gap:8px;padding-right:2px;user-select:none;
   font-weight:650;letter-spacing:.14em;font-size:11px;text-transform:uppercase;
+  white-space:nowrap;
 }
 .wordmark .dot{
-  width:9px;height:9px;border-radius:3px;
+  width:9px;height:9px;border-radius:3px;flex:0 0 9px;
   background:var(--accent);box-shadow:0 0 12px var(--accent);
 }
 
-.nav{display:flex;align-items:center;gap:2px}
-
+/* Fixed width and right-aligned, so paging through weeks never nudges the
+   arrows sideways — the buttons stay exactly where your cursor left them. */
 .period{
+  margin-left:auto;                 /* hugs the arrows from the left */
+  /* Fixed, and wide enough for the longest label there is — the day view's
+     "Wednesday 16 / September 2026" at 205px. Fixed rather than natural so
+     paging through weeks never nudges the arrows sideways. */
+  width:212px;flex:0 0 212px;text-align:right;
   font-size:15px;font-weight:600;letter-spacing:-.01em;
-  min-width:186px;user-select:none;white-space:nowrap;
+  user-select:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .period .sub{color:var(--faint);font-weight:450;margin-left:7px;font-size:12px}
 
@@ -37,22 +52,25 @@
 .segmented button{
   padding:0 12px;height:24px;border-radius:7px;
   font-size:11.5px;font-weight:550;color:var(--muted);letter-spacing:.02em;
+  white-space:nowrap;                 /* "To do" must never wrap to two lines */
   transition:background .14s,color .14s;
 }
 .segmented button:hover{color:var(--text)}
 
-/* board — its own button, sat between search and the calendar views */
-
-/* One filled button tells you what you're looking at. Board and the four
-   calendar views are the same choice, so they get the same treatment —
-   and only ever one of them is `.on` at a time. */
-#boardbtn.on,
+/* One filled button tells you what you're looking at. To do, Board and the
+   four calendar views are all the same choice — two switches, six buttons,
+   and only ever one of them is `.on`. */
 .segmented button.on{
   background:var(--accent);border-color:transparent;color:#fff;
   box-shadow:var(--shadow-sm);
 }
-#boardbtn.on:hover,
 .segmented button.on:hover{filter:brightness(1.12);color:#fff}
+
+/* the To do / Board pair carries icons, so it needs a little more room */
+#modes button{display:flex;align-items:center;gap:5px;padding:0 10px}
+#modes button svg{
+  width:12px;height:12px;fill:currentColor;stroke:none;opacity:.85;
+}
 
 /* search */
 .searchwrap{position:relative;display:flex;align-items:center}
@@ -61,33 +79,12 @@
   stroke:var(--faint);fill:none;stroke-width:1.9;pointer-events:none;
 }
 #search{
-  width:140px;height:28px;padding:0 10px 0 27px;
+  width:132px;height:28px;padding:0 10px 0 27px;
   background:var(--panel-2);border:1px solid var(--line);border-radius:var(--r-sm);
   outline:none;font-size:12px;transition:width .18s,border-color .12s,background .12s;
 }
 #search::placeholder{color:var(--faint)}
-#search:focus{width:200px;border-color:var(--accent);background:var(--panel-3)}
-
-/* running-timer pill in the topbar */
-#timerpill{
-  display:none;align-items:center;gap:7px;height:28px;padding:0 6px 0 10px;
-  background:rgba(239,95,95,.14);border:1px solid rgba(239,95,95,.34);
-  border-radius:99px;font-size:11.5px;font-weight:560;color:var(--danger);
-  max-width:240px;cursor:pointer;
-}
-#timerpill.on{display:flex}
-#timerpill .rec{
-  width:7px;height:7px;border-radius:99px;background:var(--danger);flex:0 0 7px;
-  animation:pulse 1.6s ease-in-out infinite;
-}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
-#timerpill .tp-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px}
-#timerpill .tp-time{font-variant-numeric:tabular-nums;opacity:.85}
-#timerpill .tp-stop{
-  width:20px;height:20px;border-radius:99px;display:grid;place-items:center;
-  background:var(--danger);color:#fff;flex:0 0 20px;
-}
-#timerpill .tp-stop svg{width:9px;height:9px;fill:currentColor;stroke:none}
+#search:focus{width:190px;border-color:var(--accent);background:var(--panel-3)}
 
 /* ---------- notice banner (shown when opened via file://) ---------- */
 .banner{
@@ -99,6 +96,15 @@
 }
 /* an author `display` beats the UA rule for [hidden], so restate it */
 .banner[hidden]{display:none}
+
+/* losing work is a different order of problem from a missing folder */
+.banner.danger{
+  background:rgba(239,95,95,.13);
+  border-bottom-color:rgba(239,95,95,.34);
+  color:var(--danger);
+}
+.banner.danger .btn{margin-left:auto}
+.banner.danger .btn + .btn{margin-left:6px}
 .banner b{color:var(--text)}
 .banner code{
   background:var(--panel-3);color:var(--text);
@@ -108,13 +114,94 @@
 .banner .x{margin-left:auto;color:inherit;opacity:.7;font-size:15px;line-height:1;padding:0 4px}
 .banner .x:hover{opacity:1}
 
-/* ---------- drag ghost ---------- */
-#ghost{
-  position:fixed;pointer-events:none;z-index:999;opacity:0;
-  border-radius:7px;padding:4px 9px;font-size:11.5px;font-weight:560;
-  box-shadow:var(--shadow);border-left:2.5px solid;
-  max-width:210px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-#ghost.on{opacity:.95}
 body.dragging{cursor:grabbing!important}
 body.dragging *{cursor:grabbing!important;user-select:none!important}
+
+/* ---------- carrying a card ----------
+   The card itself travels, not a stand-in. It keeps its own size and
+   contents so you can still read what you're moving, lifted off the page
+   and wobbling slightly — enough to feel picked up, little enough to stay
+   legible while you aim. */
+.carrying{
+  z-index:999;
+  pointer-events:none;          /* the drop target underneath has to be findable */
+  box-shadow:var(--shadow);
+  opacity:.96;
+  transition:none;              /* it must not lag behind the pointer */
+  animation:wiggle .34s ease-in-out infinite;
+}
+
+/* `rotate` on its own, not inside `transform` — the drag sets `translate`
+   separately, and animating `transform` would wipe it out every frame. */
+@keyframes wiggle{
+  0%,100%{ rotate:-1deg }
+  50%    { rotate: 1deg }
+}
+
+@media (prefers-reduced-motion:reduce){
+  .carrying{animation:none}
+}
+
+/* ---------- clients & labels menu ---------- */
+.labelmenu{position:relative;display:flex;align-items:center}
+
+#labelbtn.on{background:var(--panel-3);color:var(--accent)}
+/* a dot rather than a count: the point is "something is filtered", and the
+   panel right below says exactly what */
+.flagdot{
+  position:absolute;top:3px;right:3px;
+  width:6px;height:6px;border-radius:99px;
+  background:var(--accent);box-shadow:0 0 0 2px var(--panel);
+}
+.flagdot[hidden]{display:none}
+
+.labelpanel{
+  position:absolute;top:calc(100% + 8px);right:0;z-index:50;
+  width:264px;padding:10px;
+  background:var(--panel);border:1px solid var(--line-2);border-radius:12px;
+  box-shadow:var(--shadow);
+}
+.labelpanel[hidden]{display:none}
+
+.lp-head{
+  display:flex;align-items:center;gap:6px;margin-bottom:8px;
+  font-size:10px;font-weight:650;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--faint);
+}
+.lp-head .note{
+  margin-left:auto;font-weight:500;letter-spacing:0;text-transform:none;font-size:10px;
+}
+
+/* ---------- collapsing the sidebar ----------
+   A width transition on the aside itself, so the main pane reflows with it
+   rather than the sidebar sliding over the top of anything. */
+.sidebar{transition:width .18s,flex-basis .18s,opacity .14s}
+#app.no-side .sidebar{
+  width:0;flex-basis:0;opacity:0;overflow:hidden;
+  border-right-width:0;pointer-events:none;   /* the border counts too */
+}
+#sidebtn.on{color:var(--accent)}
+
+/* ---------- when the window gets tight ----------
+   Nothing wraps and nothing overlaps; the bar sheds decoration in the order
+   it can most afford to lose it. */
+@media (max-width:1180px){
+  .wordmark{font-size:0;gap:0;padding:0}       /* keep the dot, drop the word */
+  .wordmark .dot{margin-right:2px}
+  .period{width:150px;flex-basis:150px;font-size:13.5px}
+  .period .sub{display:none}                   /* the year is the least of it */
+}
+@media (max-width:1020px){
+  .topbar{gap:8px;padding:0 10px}
+  .tb-zone{gap:7px}
+  #modes button{padding:0 8px}
+  #modes button span{display:none}
+  #newtask span{display:none}
+  #search{width:104px}
+  #search:focus{width:150px}
+}
+@media (max-width:880px){
+  /* the period repeats what the lit view button and the grid already say */
+  .period{display:none}
+  #today{display:none}
+}

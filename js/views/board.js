@@ -76,6 +76,19 @@ ORG.views = ORG.views || {};
 
     h.append(U.el("span", "n", String(count)));
 
+    /* the Done list is the one that grows without end, so it gets a way
+       to empty itself that doesn't destroy anything */
+    if (col.done && count){
+      const sweep = U.el("button", "col-sweep", "Archive");
+      sweep.title = `Put all ${count} finished card${count === 1 ? "" : "s"} away`;
+      sweep.addEventListener("click", e => {
+        e.stopPropagation();
+        const n = ORG.store.archiveDone();
+        if (n) U.toast(`Archived ${n} finished card${n === 1 ? "" : "s"}`);
+      });
+      h.append(sweep);
+    }
+
     const kill = U.el("button", "kill", "×");
     kill.title = "Delete this list";
     kill.addEventListener("click", () => {
@@ -129,7 +142,7 @@ ORG.views = ORG.views || {};
     top.append(names);
     body.append(top);
 
-    const list = steps(t);
+    const list = ORG.ui.miniList(t, MAX_STEPS);
     if (list) body.append(list);
 
     body.append(meta(t));
@@ -158,74 +171,9 @@ ORG.views = ORG.views || {};
     });
   }
 
-  /* ============================================================
-     THE TASK LIST ON A CARD
-     The point of the board is seeing what has to happen without
-     opening anything, so the steps are here and tickable in place.
-     Ticking one is the same edit as ticking it inside the card —
-     same step, same object, so both views agree immediately.
-     ============================================================ */
+  /* The checklist lives in ui/chips.js — the to-do wall draws the same
+     one, and two copies would drift apart. */
   const MAX_STEPS = 6;          // a card is a summary, not the whole brief
-
-  function steps(t){
-    if (!t.steps.length) return null;
-
-    const { done, total } = ORG.store.progress(t);
-    const all = done === total;
-    const box = U.el("div", "card-steps");
-
-    const bar = U.el("div", "cs-bar");
-    const fill = U.el("i", all ? "all" : null);
-    fill.style.width = (done / total * 100) + "%";
-    bar.append(fill);
-
-    const head = U.el("div", "cs-top");
-    head.append(bar, U.el("span", "cs-count" + (all ? " all" : ""), `${done}/${total}`));
-    box.append(head);
-
-    const { rows, hidden } = visibleSteps(t);
-    const items = U.el("div", "cs-items");
-    rows.forEach(s => items.append(stepRow(t, s)));
-    box.append(items);
-
-    if (hidden){
-      const more = U.el("div", "cs-more", `+${hidden} more`);
-      more.title = "Open the card for the whole list";
-      box.append(more);
-    }
-    return box;
-  }
-
-  /**
-   * Which slice of a long list to show. Always in order, and starting at
-   * the first thing not done yet — so a card shows where you are and
-   * what's next rather than six steps you finished last week.
-   */
-  function visibleSteps(t){
-    if (t.steps.length <= MAX_STEPS) return { rows:t.steps, hidden:0 };
-    const next = Math.max(0, t.steps.findIndex(s => !s.done));
-    const from = Math.min(next, t.steps.length - MAX_STEPS);
-    return { rows:t.steps.slice(from, from + MAX_STEPS), hidden:t.steps.length - MAX_STEPS };
-  }
-
-  function stepRow(t, s){
-    const row = U.el("div", "cs-item" + (s.done ? " on" : ""));
-
-    /* class "check" on purpose: dnd.js and the card's own click handler
-       both skip anything inside one, so ticking a step can't start a drag
-       or open the card */
-    const box = U.el("button", "check cs-check" + (s.done ? " on" : ""));
-    box.innerHTML = `<svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-    box.title = s.done ? "Not done after all" : "Mark this step done";
-    box.addEventListener("click", e => {
-      e.stopPropagation();
-      ORG.store.updateStep(t, s.id, { done: !s.done });
-    });
-    row.append(box);
-
-    row.append(U.el("span", "cs-text", s.text || "Untitled step"));
-    return row;
-  }
 
   function meta(t){
     const m = U.el("div", "card-meta");
@@ -242,7 +190,6 @@ ORG.views = ORG.views || {};
 
     /* no steps pill here — the list above already shows the count */
     const due  = ORG.ui.duePill(t);  if (due)  m.append(due);
-    const time = ORG.ui.timePill(t); if (time) m.append(time);
 
     if (t.files.length){
       const p = U.el("span", "pill files");

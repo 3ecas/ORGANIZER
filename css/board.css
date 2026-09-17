@@ -40,6 +40,15 @@
   background:var(--panel-3);padding:1px 6px;border-radius:99px;
   font-variant-numeric:tabular-nums;flex:0 0 auto;
 }
+.col-head .col-sweep{
+  flex:0 0 auto;padding:1px 7px;border-radius:99px;
+  font-size:9.5px;font-weight:650;letter-spacing:.02em;
+  color:var(--faint);background:var(--panel-3);
+  opacity:0;transition:opacity .12s,color .12s;
+}
+.col:hover .col-sweep{opacity:1}
+.col-head .col-sweep:hover{color:var(--text)}
+
 .col-head .kill{
   width:20px;height:20px;border-radius:5px;display:grid;place-items:center;
   color:var(--faint);font-size:15px;line-height:1;opacity:0;transition:opacity .12s,color .12s;
@@ -112,44 +121,6 @@
   margin-top:1px;word-break:break-word;
 }
 .card.done .card-sub{text-decoration:line-through}
-
-/* ---------- the task list, right on the card ---------- */
-.card-steps{display:flex;flex-direction:column;gap:5px}
-
-.cs-top{display:flex;align-items:center;gap:7px}
-.cs-bar{flex:1;height:3px;border-radius:99px;background:var(--line);overflow:hidden}
-.cs-bar i{
-  display:block;height:100%;border-radius:99px;
-  background:var(--accent);transition:width .22s,background .22s;
-}
-.cs-bar i.all{background:var(--ok)}
-.cs-count{
-  flex:0 0 auto;font-size:10px;font-weight:650;color:var(--faint);
-  font-variant-numeric:tabular-nums;
-}
-.cs-count.all{color:var(--ok)}
-
-.cs-items{display:flex;flex-direction:column;gap:1px;margin:0 -3px}
-.cs-item{
-  display:flex;align-items:flex-start;gap:6px;
-  padding:2px 3px;border-radius:5px;transition:background .12s;
-}
-.cs-item:hover{background:var(--panel)}
-
-/* a smaller box than the card's own completion tick, so the two don't
-   compete — this one is a step, not the whole job */
-.check.cs-check{flex:0 0 12px;width:12px;height:12px;border-radius:3.5px;margin-top:1px}
-.check.cs-check svg{width:8px;height:8px;stroke-width:3}
-
-.cs-text{
-  flex:1;min-width:0;font-size:11.5px;line-height:1.35;
-  color:var(--muted);word-break:break-word;
-}
-.cs-item.on .cs-text{color:var(--faint);text-decoration:line-through}
-
-.cs-more{font-size:10.5px;color:var(--faint);padding-left:3px}
-
-.card.done .card-steps{opacity:.7}
 
 .card-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
 .card-meta:empty{display:none}

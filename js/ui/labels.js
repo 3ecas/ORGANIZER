@@ -289,9 +289,64 @@ ORG.labels = (() => {
     return wrap;
   }
 
+  /* ============================================================
+     THE TOPBAR MENU
+     The manager used to be a permanent panel in the sidebar, which
+     cost a third of it for something you touch occasionally. It's a
+     flag button now: out of the way, one click away.
+     ============================================================ */
+  /** Did this click start inside one of these elements? Survives the node
+      being re-rendered away mid-dispatch, which closest() does not. */
+  function cameFrom(e, ...ids){
+    const path = typeof e.composedPath === "function" ? e.composedPath() : [];
+    return path.some(n => n && n.id && ids.includes(n.id));
+  }
+
+  function togglePanel(force){
+    const panel = U.$("#labelpanel");
+    const open = force !== undefined ? force : panel.hidden;
+    panel.hidden = !open;
+    U.$("#labelbtn").classList.toggle("on", open);
+    if (open) manager(U.$("#labels"));
+    return open;
+  }
+
+  const panelOpen = () => !U.$("#labelpanel").hidden;
+
+  /** Redraw the list and the "something is filtered" dot. */
+  function refreshMenu(){
+    U.$("#labeldot").hidden = !ORG.store.state.hidden.length;
+    if (panelOpen()) manager(U.$("#labels"));
+  }
+
+  function initMenu(){
+    U.$("#labelbtn").addEventListener("click", e => {
+      e.stopPropagation();
+      togglePanel();
+    });
+
+    /* Clicking anywhere else closes it — but not inside the panel, where
+       you're busy renaming and picking colours.
+       composedPath() rather than closest(): filtering and renaming redraw
+       the list, so by the time this runs the clicked row has already been
+       replaced and walking up from it finds nothing. The path is captured
+       when the event is dispatched, so it still knows where the click came
+       from. */
+    document.addEventListener("click", e => {
+      if (!panelOpen()) return;
+      if (cameFrom(e, "labelpanel", "labelbtn")) return;
+      togglePanel(false);
+    });
+
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape" && panelOpen()) togglePanel(false);
+    });
+  }
+
   /** Close the card's dropdown and editor — called when a card is opened. */
   const reset = () => { openIn.picker = null; menuOpen = false; };
 
   return { visible, gradient, stripe, swatch, picker, manager, reset,
+           initMenu, refreshMenu, togglePanel, cameFrom,
            closeMenu(){ if (!menuOpen) return false; reset(); return true; } };
 })();

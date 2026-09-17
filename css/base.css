@@ -24,8 +24,6 @@
 .btn.primary{background:var(--accent);border-color:transparent;color:#fff}
 .btn.primary:hover{filter:brightness(1.12);color:#fff}
 .btn.danger:hover{background:rgba(239,95,95,.14);color:var(--danger);border-color:rgba(239,95,95,.3)}
-.btn.live{background:var(--danger);border-color:transparent;color:#fff}
-.btn.live:hover{filter:brightness(1.1);color:#fff}
 .btn.sm{height:24px;padding:0 9px;font-size:11px;border-radius:7px}
 
 /* ---------- inputs ---------- */
@@ -91,7 +89,6 @@ select.input{
 .pill.due{background:rgba(224,179,65,.16);color:var(--warn)}
 .pill.due.over{background:rgba(239,95,95,.18);color:var(--danger)}
 .pill.due.far{background:var(--panel-3);color:var(--muted)}
-.pill.time{background:var(--panel-3);color:var(--muted);font-variant-numeric:tabular-nums}
 
 kbd{
   background:var(--panel-3);border:1px solid var(--line-2);border-bottom-width:2px;

@@ -30,7 +30,10 @@ import json
 import os
 import re
 import shutil
+import socket
 import sys
+import time
+import webbrowser
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs, unquote
 
@@ -43,6 +46,20 @@ MAX_UPLOAD = 4 * 1024 ** 3        # 4 GB ceiling, mostly to catch mistakes
 # Mirrors the two spaces in js/core/spaces.js. Only used to lay the folders
 # out at startup so both are visible in Finder from the very first run.
 SPACES = ("Work", "Personal")
+
+# This machine's name, stamped into data.json on every write so the app can
+# say WHICH device last touched it when two of them disagree.
+DEVICE = socket.gethostname().split(".")[0] or "this computer"
+
+# Windows refuses these as filenames whatever the extension. Harmless on a
+# Mac, but the folder may well be sitting in a synced folder shared with a PC.
+RESERVED = {"con", "prn", "aux", "nul"} | {f"com{i}" for i in range(1, 10)} \
+                                        | {f"lpt{i}" for i in range(1, 10)}
+
+
+def de_reserve(name: str) -> str:
+    stem = name.split(".")[0].strip().lower()
+    return f"_{name}" if stem in RESERVED else name
 
 # Characters that either break URLs or aren't allowed in filenames.
 ILLEGAL = re.compile(r'[<>:"|?*#%\x00-\x1f\x7f]')
@@ -57,7 +74,7 @@ def safe_name(raw: str) -> str:
     name = name.replace("\\", "/").split("/")[-1]     # drop any directory part
     name = ILLEGAL.sub("_", name)
     name = name.strip().strip(".")                    # no leading/trailing dots
-    return name[:120] or "file"
+    return de_reserve(name[:120]) or "file"
 
 
 def safe_folder(raw: str) -> str:
@@ -66,7 +83,7 @@ def safe_folder(raw: str) -> str:
     name = name.replace("\\", "/").replace("/", " ")  # never nest
     name = ILLEGAL.sub("_", name)
     name = re.sub(r"\s+", " ", name).strip().strip(".")
-    return name[:80] or "Untitled"
+    return de_reserve(name[:80]) or "Untitled"
 
 
 def inside_files(path: str) -> bool:
@@ -98,6 +115,16 @@ def project_dir(space: str, project: str) -> str:
 
 def rel(path: str) -> str:
     return os.path.relpath(path, ROOT).replace(os.sep, "/")
+
+
+def read_state() -> dict:
+    """Whatever data.json holds this second. {} if it isn't there or is junk."""
+    try:
+        with open(DATA_FILE, "r", encoding="utf-8") as fh:
+            got = json.load(fh)
+            return got if isinstance(got, dict) else {}
+    except (OSError, ValueError):
+        return {}
 
 
 def prune_empty(folder: str):
@@ -158,7 +185,7 @@ class Handler(SimpleHTTPRequestHandler):
         route = urlparse(self.path).path
 
         if route == "/api/ping":
-            return self.send_json({"ok": True, "root": ROOT})
+            return self.send_json({"ok": True, "root": ROOT, "device": DEVICE})
 
         if route == "/api/state":
             if not os.path.exists(DATA_FILE):
@@ -168,6 +195,9 @@ class Handler(SimpleHTTPRequestHandler):
                     return self.send_json(json.load(fh))
             except (OSError, ValueError) as err:
                 return self.send_json({"error": f"data.json unreadable: {err}"}, 500)
+
+        if route == "/api/whoami":
+            return self.send_json({"device": DEVICE})
 
         return super().do_GET()
 
@@ -186,6 +216,31 @@ class Handler(SimpleHTTPRequestHandler):
         except (ValueError, UnicodeDecodeError) as err:
             return self.send_json({"error": f"invalid JSON: {err}"}, 400)
 
+        # ---- don't overwrite another machine's work ----
+        # Every save stamps data.json with a revision number. The browser
+        # sends back the revision it loaded; if the file on disk has moved
+        # on since then, a synced folder has brought in changes from another
+        # device and writing now would erase them silently. Refuse instead
+        # and let the app say so.
+        disk = read_state()
+        disk_rev = int(disk.get("rev") or 0)
+        try:
+            client_rev = int(self.param("rev", "0") or 0)
+        except ValueError:
+            client_rev = 0
+
+        if disk_rev and client_rev != disk_rev:
+            return self.send_json({
+                "error": "stale",
+                "rev": disk_rev,
+                "savedBy": disk.get("savedBy") or "another device",
+                "savedAt": disk.get("savedAt") or 0,
+            }, 409)
+
+        parsed["rev"] = disk_rev + 1
+        parsed["savedBy"] = DEVICE
+        parsed["savedAt"] = int(time.time() * 1000)
+
         # Write to a temp file first, then swap it in. A crash mid-write
         # can then never leave a half-written data.json behind.
         tmp = DATA_FILE + ".tmp"
@@ -198,7 +253,7 @@ class Handler(SimpleHTTPRequestHandler):
         except OSError as err:
             return self.send_json({"error": f"could not write: {err}"}, 500)
 
-        return self.send_json({"ok": True})
+        return self.send_json({"ok": True, "rev": parsed["rev"], "device": DEVICE})
 
     # ---------- POST ----------
     def do_POST(self):
@@ -303,8 +358,15 @@ def main():
     server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
     free = shutil.disk_usage(ROOT).free / 1024 ** 3
 
+    # The socket is listening the moment the server is constructed, so the
+    # browser can be sent here right away — no sleeping in the launcher, and
+    # it works the same on macOS and Windows.
+    if "--no-browser" not in sys.argv:
+        webbrowser.open(f"http://localhost:{port}/")
+
     print()
     print(f"  Organizer is running at  http://localhost:{port}/")
+    print(f"  This device is           {DEVICE}")
     print(f"  Everything saves into    {ROOT}")
     print(f"  Imported files land in   FILES/Work/<project>/")
     print(f"                           FILES/Personal/<project>/")

@@ -11,16 +11,28 @@
 <link rel="stylesheet" href="css/spaces.css">
 <link rel="stylesheet" href="css/sidebar.css">
 <link rel="stylesheet" href="css/calendar.css">
+<link rel="stylesheet" href="css/timeline.css">
 <link rel="stylesheet" href="css/board.css">
+<link rel="stylesheet" href="css/todo.css">
 <link rel="stylesheet" href="css/editor.css">
 <link rel="stylesheet" href="css/checklist.css">
 <link rel="stylesheet" href="css/labels.css">
 <link rel="stylesheet" href="css/hover.css">
+<link rel="stylesheet" href="css/sheet.css">
 </head>
 
 <body>
 
 <div id="app">
+
+  <!-- shown when a synced copy of data.json has moved ahead of this one -->
+  <div class="banner danger" id="syncbanner" hidden>
+    <b>Another device saved first.</b>
+    <span id="sync-who">Changes arrived from another computer while this was open.
+    Nothing more will be saved here until you reload.</span>
+    <button class="btn sm" id="sync-export">Export what's here</button>
+    <button class="btn sm primary" id="sync-reload">Reload</button>
+  </div>
 
   <!-- shown only when the app isn't talking to server.py -->
   <div class="banner" id="filebanner" hidden>
@@ -30,57 +42,94 @@
     <button class="x" id="banner-x" title="Dismiss">&times;</button>
   </div>
 
-  <!-- ============================================================ TOPBAR -->
+  <!-- ============================================================ TOPBAR
+       Three zones, read left to right: what you're working in, when you
+       are, and the tools. Everything temporal is in the middle so the
+       arrows sit either side of the views they page through.
+       ================================================================= -->
   <header class="topbar">
-    <div class="wordmark"><span class="dot"></span>Organizer</div>
 
-    <div class="nav">
+    <!-- ---------- WHAT: the mode you're in ---------- -->
+    <div class="tb-zone">
+      <button class="iconbtn" id="sidebtn" title="Show or hide the sidebar  (\)">
+        <svg viewBox="0 0 24 24"><path d="M4 5h16v14H4zM10 5v14"/></svg>
+      </button>
+      <div class="wordmark"><span class="dot"></span>Organizer</div>
+
+      <div class="segmented" id="modes">
+        <button id="todobtn" title="To do  (6)">
+          <svg viewBox="0 0 24 24"><path d="M4 5h7v6H4zM13 5h7v6h-7zM4 13h7v6H4zM13 13h7v6h-7z"/></svg><span>To do</span>
+        </button>
+        <button id="boardbtn" title="Board  (5)">
+          <svg viewBox="0 0 24 24"><path d="M4 5h5v14H4zM15 5h5v9h-5z"/></svg><span>Board</span>
+        </button>
+        <button id="tlbtn" title="Timeline  (7)">
+          <svg viewBox="0 0 24 24"><path d="M3 6h11v4H3zM7 14h14v4H7z"/></svg><span>Timeline</span>
+        </button>
+      </div>
+
+      <button class="btn primary" id="newtask" title="New task  (N)">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>New</span>
+      </button>
+
+      <!-- pushed right, so it sits just left of the arrows -->
+      <div class="period" id="period"></div>
+    </div>
+
+    <!-- ---------- WHEN: the period, the views, and the way through them ---------- -->
+    <div class="tb-zone centre">
       <button class="iconbtn" id="prev" title="Previous  (←)">
         <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
       </button>
+
+      <div class="segmented" id="views">
+        <button data-view="day">Day</button>
+        <button data-view="week">Week</button>
+        <button data-view="month">Month</button>
+        <button data-view="year">Year</button>
+      </div>
+
       <button class="iconbtn" id="next" title="Next  (→)">
         <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
       </button>
     </div>
-    <button class="btn" id="today" title="Jump to today  (T)">Today</button>
 
-    <div class="period" id="period"></div>
+    <!-- ---------- TOOLS ---------- -->
+    <div class="tb-zone end">
+      <!-- pulled left, so it sits just right of the arrows -->
+      <button class="btn" id="today" title="Jump to today  (T)">Today</button>
 
-    <div class="spacer"></div>
+      <div class="searchwrap">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input id="search" placeholder="Search…" autocomplete="off" spellcheck="false" title="Search  (/)">
+      </div>
 
-    <!-- live stopwatch, appears only while a timer runs -->
-    <div id="timerpill">
-      <span class="rec"></span>
-      <span class="tp-name"></span>
-      <span class="tp-time">0:00</span>
-      <button class="tp-stop" title="Stop and log">
-        <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+      <!-- clients and labels: a menu rather than a panel in the sidebar -->
+      <div class="labelmenu">
+        <button class="iconbtn" id="labelbtn" title="Clients &amp; labels">
+          <svg viewBox="0 0 24 24"><path d="M4 21V4h13l-2 4 2 4H4"/></svg>
+          <span class="flagdot" id="labeldot" hidden></span>
+        </button>
+
+        <div class="labelpanel" id="labelpanel" hidden>
+          <div class="lp-head">Clients &amp; labels <span class="note">click to filter</span></div>
+          <div class="labels" id="labels"></div>
+        </div>
+      </div>
+
+      <button class="iconbtn" id="archivebtn" title="Archive — finished work, put away">
+        <svg viewBox="0 0 24 24"><path d="M3 7h18v3H3zM5 10v10h14V10M10 14h4"/></svg>
+        <span class="badge" id="arch-n"></span>
+      </button>
+
+      <button class="iconbtn" id="keysbtn" title="Keyboard shortcuts  (?)">
+        <svg viewBox="0 0 24 24"><path d="M9.5 9a2.5 2.5 0 113.5 2.3c-.8.4-1 1-1 1.7M12 17h.01"/></svg>
+      </button>
+
+      <button class="iconbtn" id="theme" title="Light / dark">
+        <svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>
       </button>
     </div>
-
-    <div class="searchwrap">
-      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-      <input id="search" placeholder="Search…" autocomplete="off" spellcheck="false" title="Search  (/)">
-    </div>
-
-    <button class="btn" id="boardbtn" title="Board  (5)">
-      <svg viewBox="0 0 24 24"><path d="M4 5h5v14H4zM15 5h5v9h-5z"/></svg>Board
-    </button>
-
-    <div class="segmented" id="views">
-      <button data-view="day">Day</button>
-      <button data-view="week">Week</button>
-      <button data-view="month">Month</button>
-      <button data-view="year">Year</button>
-    </div>
-
-    <button class="btn primary" id="newtask" title="New task  (N)">
-      <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New
-    </button>
-
-    <button class="iconbtn" id="theme" title="Light / dark">
-      <svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>
-    </button>
   </header>
 
   <div class="body">
@@ -102,11 +151,6 @@
       <div class="sb-section grow">
         <div class="sb-head">Unscheduled <span class="count" id="inbox-count">0</span></div>
         <div id="inbox" data-drop="inbox"></div>
-      </div>
-
-      <div class="sb-section">
-        <div class="sb-head">Clients &amp; labels <span class="note">click to filter</span></div>
-        <div class="labels" id="labels"></div>
       </div>
 
       <div class="sb-foot">
@@ -144,6 +188,9 @@
     </div>
     <button class="iconbtn" id="m-dup" title="Duplicate">
       <svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>
+    </button>
+    <button class="iconbtn" id="m-archive" title="Archive — keeps everything, just puts it away">
+      <svg viewBox="0 0 24 24"><path d="M3 7h18v3H3zM5 10v10h14V10M10 14h4"/></svg>
     </button>
     <button class="iconbtn danger" id="m-del" title="Delete">
       <svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>
@@ -226,27 +273,6 @@
 
       <div class="divider"></div>
 
-      <!-- time tracking -->
-      <div class="tt">
-        <div class="tt-top">
-          <div class="tt-total" id="m-tt-total">0m</div>
-          <div class="tt-of" id="m-tt-of">logged</div>
-        </div>
-
-        <div class="tt-actions">
-          <button class="btn" id="m-tt-toggle">
-            <svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg>Start
-          </button>
-          <span id="m-tt-quick" style="display:flex;gap:5px">
-            <button class="btn sm" data-min="15">+15m</button>
-            <button class="btn sm" data-min="30">+30m</button>
-            <button class="btn sm" data-min="60">+1h</button>
-          </span>
-        </div>
-
-        <div class="tt-list" id="m-tt-list"></div>
-      </div>
-
       <div class="divider"></div>
 
       <div class="field">
@@ -279,8 +305,36 @@
 </div>
 
 
+<!-- ============================================================= ARCHIVE -->
+<div class="scrim" id="arch-scrim"></div>
+<div class="sheet" id="archive" role="dialog" aria-modal="true" aria-label="Archive" hidden>
+  <div class="sheet-head">
+    <span class="sheet-title">Archive</span>
+    <span class="sheet-sub" id="arch-count"></span>
+    <button class="iconbtn" id="arch-close" title="Close  (Esc)">
+      <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="sheet-note">Archived work keeps its hours, its checklist and its files —
+  it just stays out of every view. <b>Restore</b> puts it back.</div>
+  <div class="sheet-body" id="arch-list"></div>
+</div>
+
+
+<!-- =========================================================== SHORTCUTS -->
+<div class="scrim" id="keys-scrim"></div>
+<div class="sheet narrow" id="keys" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts" hidden>
+  <div class="sheet-head">
+    <span class="sheet-title">Keyboard</span>
+    <button class="iconbtn" id="keys-close" title="Close  (Esc)">
+      <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="sheet-body" id="keys-body"></div>
+</div>
+
+
 <!-- =============================================================== MISC -->
-<div id="ghost"></div>
 <div id="dropline"></div>
 <div class="toast" id="toast"></div>
 <input type="file" id="filein" multiple hidden>
@@ -303,19 +357,21 @@
 
 <script src="js/ui/dnd.js"></script>
 <script src="js/ui/chips.js"></script>
-<script src="js/ui/timer.js"></script>
 <script src="js/ui/labels.js"></script>
 <script src="js/ui/preview.js"></script>
 <script src="js/ui/hover.js"></script>
 <script src="js/ui/checklist.js"></script>
 <script src="js/ui/editor.js"></script>
+<script src="js/ui/archive.js"></script>
+<script src="js/ui/shortcuts.js"></script>
 <script src="js/ui/spaceswitch.js"></script>
 <script src="js/ui/sidebar.js"></script>
 
-<script src="js/views/day-week.js"></script>
+<script src="js/views/timeline.js"></script>
 <script src="js/views/month.js"></script>
 <script src="js/views/year.js"></script>
 <script src="js/views/board.js"></script>
+<script src="js/views/todo.js"></script>
 
 <script src="js/app.js"></script>
 </body>

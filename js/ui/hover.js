@@ -121,12 +121,11 @@ ORG.hover = (() => {
     }
 
     /* --- when --- */
-    wrap.append(U.el("div", "hc-when", when(t)));
+    wrap.append(U.el("div", "hc-when", ORG.ui.whenText(t)));
 
     /* --- the same pills used on the cards --- */
     const pills = U.el("div", "hc-pills");
     const due  = ORG.ui.duePill(t);  if (due)  pills.append(due);
-    const time = ORG.ui.timePill(t); if (time) pills.append(time);
     if (t.files.length){
       const p = U.el("span", "pill files");
       p.append(U.icon(U.PATH.clip, "glyph"), String(t.files.length));
@@ -181,24 +180,6 @@ ORG.hover = (() => {
     if (hidden > 0) box.append(U.el("div", "hc-more", `+${hidden} more`));
 
     return box;
-  }
-
-  /** "Mon 14 Sep · 09:30 – 11:30", or the run of days, or unscheduled. */
-  function when(t){
-    if (!t.date) return "Not on the calendar";
-
-    const d = U.parseYmd(t.date);
-    const day = `${U.DOW[U.dowMon(d)]} ${d.getDate()} ${U.MON_SHORT[d.getMonth()]}`;
-
-    if (t.endDate){
-      const e = U.parseYmd(t.endDate);
-      return `${d.getDate()} ${U.MON_SHORT[d.getMonth()]} – ${e.getDate()} ${U.MON_SHORT[e.getMonth()]}`
-           + `  ·  ${ORG.store.spanDays(t)} days, all day`;
-    }
-    if (!t.start) return `${day}  ·  all day`;
-
-    const end = U.fmtMin(Math.min(U.parseTime(t.start) + t.dur, 1439));
-    return `${day}  ·  ${t.start} – ${end}`;
   }
 
   /* ============================================================

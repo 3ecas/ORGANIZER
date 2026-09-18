@@ -323,22 +323,35 @@ ORG.app = (() => {
   /* ============================================================
      BOOT
      ============================================================ */
+  /** Wire one part up. If it breaks, the rest of the app still opens.
+      Everything here runs once at start-up, and a throw in any of it used
+      to leave a white page with nothing on it and no way to know why —
+      far worse than one section being dead. */
+  function wire(name, fn){
+    try { fn(); }
+    catch (err){
+      console.error(`${name} failed to start`, err);
+      broken.push(name);
+    }
+  }
+  const broken = [];
+
   async function boot(){
     await ORG.files.init();          // picks the disk / browser / memory backend
     await ORG.store.load();          // reads data.json when the server is up
     applyTheme();
 
-    ORG.sidebar.init();
-    ORG.editor.init();
-    ORG.hover.init();
-    ORG.labels.initMenu();
-    ORG.archive.init();
-    ORG.shortcuts.init();
-    applySidebar();
-    wireTopbar();
-    wireKeyboard();
-    wireBanner();
-    checkEnvironment();
+    wire("Sidebar",   () => ORG.sidebar.init());
+    wire("Card",      () => ORG.editor.init());
+    wire("Previews",  () => ORG.hover.init());
+    wire("Labels",    () => ORG.labels.initMenu());
+    wire("Archive",   () => ORG.archive.init());
+    wire("Shortcuts", () => ORG.shortcuts.init());
+    wire("Sidebar",   applySidebar);
+    wire("Topbar",    wireTopbar);
+    wire("Keyboard",  wireKeyboard);
+    wire("Banner",    wireBanner);
+    wire("Storage",   checkEnvironment);
 
     U.bus.on("change", render);
     U.bus.on("theme", applyTheme);
@@ -350,6 +363,10 @@ ORG.app = (() => {
     render();
     U.$("#arch-n").textContent = ORG.store.archivedCount() || "";
     setInterval(() => ORG.views.drawNow(), 30000);
+
+    if (broken.length){
+      U.toast(`${[...new Set(broken)].join(", ")} didn't start — everything else works`, 8000);
+    }
   }
 
   return { boot, render, goto, step, today, setView, newTask, applyTheme,

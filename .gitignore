@@ -1,0 +1,8 @@
+# Python writes a compiled copy of the launcher next to the source the
+# first time it runs. It's rebuilt automatically and means nothing on
+# the other machine.
+__pycache__/
+*.pyc
+
+# macOS scatters these through synced folders and they help nobody.
+.DS_Store

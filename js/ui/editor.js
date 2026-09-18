@@ -1,9 +1,10 @@
 /* ============================================================
    ui/editor.js
    The task modal.
-     LEFT  pane — every piece of information: client, board list,
-                  task list, start/end, deadline, notes
-     RIGHT pane — attached files: thumbnail strip + large preview
+     LEFT  pane — the facts: client, board list, when it starts and
+                  ends, the deadline. Read at a glance, rarely scrolled.
+     RIGHT pane — where the work is: notes, the task list and the
+                  files, in tabs. See ui/cardpanel.js.
 
    Edits apply immediately (there is no Save button). Text fields
    write straight to the task and only broadcast a re-render on a
@@ -40,8 +41,9 @@ ORG.editor = (() => {
     selectedFile = t.files.length ? t.files[0].id : null;
 
     ORG.labels.reset();        // no label left mid-edit from last time
+    ORG.cardpanel.reset();     // every card opens on the first tab
     fillLeft();
-    refreshFiles();
+    refreshPanel();
 
     U.$("#modal").classList.add("on");
     U.$("#scrim").classList.add("on");
@@ -65,10 +67,22 @@ ORG.editor = (() => {
   /* ============================================================
      LEFT PANE
      ============================================================ */
+  /** The stacked panel on the right redraws itself; it owns its own nodes. */
+  function refreshPanel(){
+    if (!task) return;
+    ORG.cardpanel.render(U.$("#m-stack"), task);
+  }
+
+  /** Notes live in the panel, so it hands the text back here to be stored. */
+  function writeNotes(text){
+    if (!task) return;
+    task.notes = text;
+    commit();
+  }
+
   function fillLeft(){
     U.$("#m-title").value = task.title;
     U.$("#m-subtitle").value = task.subtitle;
-    U.$("#m-notes").value = task.notes;
     ORG.labels.stripe(U.$("#m-dot"), ORG.store.colorsOf(task), "to bottom");
 
     U.$("#m-done").classList.toggle("on", task.done);
@@ -77,14 +91,13 @@ ORG.editor = (() => {
 
     U.$("#m-date").value  = task.date  || U.ymd(new Date());
     U.$("#m-start").value = task.start || "09:00";
-    U.$("#m-end").value   = endTime();
+    U.$("#m-end").value   = task.end   || "10:00";
     U.$("#m-until").value = task.endDate || "";
     U.$("#m-due").value   = task.due || "";
 
     renderSpacePicker();
     renderListPicker();
     renderLabels();
-    ORG.checklist.render(U.$("#m-steps"), task);
     syncScheduleFields();
   }
 
@@ -113,13 +126,7 @@ ORG.editor = (() => {
     U.$("#m-done").classList.toggle("on", task.done);
   }
 
-  const MIN_BLOCK = 15;   // minutes — the shortest block the grid can draw
-
-  /** The task stores a start plus a length; the form shows start and end. */
-  function endTime(){
-    const start = U.parseTime(task.start || "09:00");
-    return U.fmtMin(Math.min(start + (task.dur || 60), 1439));
-  }
+  const MIN_BLOCK = 15;   // minutes — the shortest stretch worth drawing
 
   /** Which client this job belongs to, and the tools to manage the list. */
   function renderLabels(){
@@ -140,17 +147,19 @@ ORG.editor = (() => {
     const scheduled = U.$("#m-sched").classList.contains("on");
     const allDay    = U.$("#m-allday").classList.contains("on");
     U.$("#m-schedfields").style.display = scheduled ? "flex" : "none";
-    U.$("#m-timefields").style.display  = (scheduled && !allDay) ? "grid" : "none";
-    U.$("#m-spanfield").style.display   = (scheduled &&  allDay) ? "flex" : "none";
+    /* "Ends on" applies either way now — a job can run to Friday and still
+       know it starts at 14:00. Only the hours come and go. */
+    /* the two dates always apply; only the clocks come and go */
+    U.$("#m-startwrap").style.visibility = (scheduled && !allDay) ? "" : "hidden";
+    U.$("#m-endwrap").style.visibility   = (scheduled && !allDay) ? "" : "hidden";
     showSpanNote();
   }
 
-  /** Say how long the run is, so the two dates aren't just two dates. */
+  /** Say what the two datetimes add up to, so they aren't just four fields. */
   function showSpanNote(){
     const note = U.$("#m-spannote");
-    if (!task || !task.endDate){ note.textContent = ""; return; }
-    const days = ORG.store.spanDays(task);
-    note.textContent = `Shows in the all-day row on all ${days} days.`;
+    if (!task || !task.date){ note.textContent = ""; return; }
+    note.textContent = ORG.ui.whenText(task);
   }
 
   /** Pull the schedule controls back into the task. */
@@ -165,36 +174,35 @@ ORG.editor = (() => {
     const wasDate = task.date;
     task.date = U.$("#m-date").value || U.ymd(new Date());
 
+    /* Moving the first day slides the whole job rather than stretching it,
+       which is what dragging the bar to another day does too. */
+    let until = U.$("#m-until").value;
+    if (until && wasDate && wasDate !== task.date && until > wasDate){
+      const len = U.daysBetween(wasDate, until);
+      until = U.ymd(U.addDays(U.parseYmd(task.date), len));
+    }
+    // a last day that isn't after the first isn't a run, it's a typo
+    task.endDate = (until && until > task.date) ? until : null;
+    U.$("#m-until").value = task.endDate || "";
+
     if (U.$("#m-allday").classList.contains("on")){
-      task.start = null;
-
-      let until = U.$("#m-until").value;
-
-      /* Moving the first day slides the whole run rather than stretching it,
-         which is what dragging the chip to another day does too. */
-      if (until && wasDate && wasDate !== task.date && until > wasDate){
-        const len = U.daysBetween(wasDate, until);
-        until = U.ymd(U.addDays(U.parseYmd(task.date), len));
-      }
-
-      // a last day that isn't after the first isn't a run, it's a typo
-      task.endDate = (until && until > task.date) ? until : null;
-
-      U.$("#m-until").value = task.endDate || "";
+      task.start = task.end = null;
       showSpanNote();
       return;
     }
 
-    task.endDate = null;                 // a timed block lives on one day
     task.start = U.$("#m-start").value || "09:00";
+    task.end   = U.$("#m-end").value || "10:00";
 
-    // Derive the length from the two times. An end at or before the start
-    // isn't an overnight block — the grid only draws one day — so nudge it
-    // to the shortest block and show that back in the field.
-    const start = U.parseTime(task.start);
-    const end   = U.parseTime(U.$("#m-end").value || endTime());
-    task.dur = end > start ? Math.min(end - start, 1440 - start) : MIN_BLOCK;
-    U.$("#m-end").value = endTime();
+    /* Within one day the end has to come after the start. Across days it
+       needn't: finishing Friday at 09:00 having begun Wednesday at 14:00
+       is an ordinary week. */
+    if (!task.endDate && U.parseTime(task.end) <= U.parseTime(task.start)){
+      const s = U.parseTime(task.start);
+      task.end = U.fmtMin(Math.min(s + MIN_BLOCK, 1439));
+      U.$("#m-end").value = task.end;
+    }
+    showSpanNote();
   }
 
   /* ============================================================
@@ -207,12 +215,11 @@ ORG.editor = (() => {
       selectedFile = task.files.length ? task.files[0].id : null;
     }
 
-    U.$("#m-filecount").textContent =
-      task.files.length ? `${task.files.length} file${task.files.length === 1 ? "" : "s"}` : "No files";
-    U.$("#m-filesize").textContent =
-      task.files.length ? U.bytes(task.files.reduce((a, f) => a + f.size, 0)) : "";
+    /* the Files section may be folded away, or empty and collapsed */
+    const strip = U.$("#filestrip");
+    if (!strip) return;
 
-    ORG.preview.renderStrip(U.$("#filestrip"), task, selectedFile, id => {
+    ORG.preview.renderStrip(strip, task, selectedFile, id => {
       selectedFile = id;
       refreshFiles();
     });
@@ -255,7 +262,11 @@ ORG.editor = (() => {
     }
 
     ORG.store.touch(task);
-    refreshFiles();
+    /* You can drop files onto the pane from any tab. Having done it, what you
+       want to see is the files — so go there rather than leaving the drop
+       looking like it did nothing. */
+    if (copied) ORG.cardpanel.show("files");
+    else refreshPanel();
 
     if (copied && F.onDisk){
       const where = task.files[task.files.length - 1].path;
@@ -420,11 +431,9 @@ ORG.editor = (() => {
       commit(true);
     });
 
-    /* --- notes --- */
-    U.$("#m-notes").addEventListener("input", e => { task.notes = e.target.value; commit(); });
-
-    /* --- files: button, OS drag-drop, paste --- */
-    U.$("#m-addfiles").addEventListener("click", () => U.$("#filein").click());
+    /* --- files: OS drag-drop, paste ---
+       The Attach buttons live inside the panel and are wired as it draws;
+       only the hidden input is permanent, so only it gets wired here. */
     U.$("#filein").addEventListener("change", e => { addFiles(e.target.files); e.target.value = ""; });
 
     const pane = U.$("#pane-right");
@@ -467,7 +476,7 @@ ORG.editor = (() => {
 
   return {
     init, open, close, isOpen, dismissLabels,
-    refreshFiles,
+    refreshFiles, refreshPanel, writeNotes,
     lastLabel: () => lastLabel,
     current: () => task,
   };

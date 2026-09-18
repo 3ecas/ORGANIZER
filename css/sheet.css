@@ -34,12 +34,64 @@
 
 /* ============================================================
    ARCHIVE
+   One flat list, newest first. Its own search box and a row of
+   client chips built from what's actually in here — after a year
+   the question is "where did the Galp job go", and a chip plus a
+   few letters answers it faster than scrolling by month.
    ============================================================ */
-.arch-month{
-  font-size:10px;font-weight:650;letter-spacing:.09em;text-transform:uppercase;
-  color:var(--faint);padding:12px 4px 6px;
+.sheet-tools{
+  flex:0 0 auto;display:flex;flex-direction:column;gap:9px;
+  padding:11px 14px;border-bottom:1px solid var(--line);
 }
-.arch-month:first-child{padding-top:2px}
+
+/* ---------- the search box ---------- */
+.arch-find{
+  display:flex;align-items:center;gap:8px;
+  background:var(--panel-2);border:1px solid var(--line);
+  border-radius:var(--r-sm);padding:0 9px;
+  transition:border-color .12s;
+}
+.arch-find:focus-within{border-color:var(--accent)}
+
+.arch-find-ic{
+  flex:0 0 14px;width:14px;height:14px;color:var(--faint);
+  fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;
+}
+.arch-find:focus-within .arch-find-ic{color:var(--accent)}
+
+.arch-search{
+  flex:1;min-width:0;background:none;border:none;outline:none;
+  color:var(--text);font-size:12.5px;padding:8px 0;
+}
+.arch-search::placeholder{color:var(--faint)}
+
+.arch-clear{
+  flex:0 0 auto;color:var(--faint);font-size:15px;line-height:1;
+  padding:2px 4px;border-radius:5px;
+}
+.arch-clear:hover{color:var(--text);background:var(--panel-3)}
+
+/* ---------- the client chips ---------- */
+.arch-filters{display:flex;flex-wrap:wrap;gap:5px}
+
+.fchip{
+  display:flex;align-items:center;gap:6px;
+  padding:4px 9px;border-radius:99px;
+  font-size:11px;font-weight:600;color:var(--faint);
+  background:var(--panel-2);border:1px solid transparent;
+  transition:color .12s,background .12s,border-color .12s;
+}
+.fchip:hover{color:var(--muted);background:var(--panel-3)}
+.fchip.on{color:var(--text);border-color:var(--accent);background:var(--accent-fog)}
+
+.fchip-dot{
+  flex:0 0 8px;width:8px;height:8px;border-radius:99px;
+}
+/* "No label" isn't a client, so it gets an outline rather than a colour */
+.fchip.bare .fchip-dot{background:none !important;border:1.5px dashed var(--faint)}
+
+.fchip-n{font-size:9.5px;color:var(--faint);font-variant-numeric:tabular-nums}
+.fchip.on .fchip-n{color:var(--accent)}
 
 .arch-row{
   display:flex;align-items:center;gap:10px;

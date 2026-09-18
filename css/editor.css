@@ -52,7 +52,92 @@
   flex:0 0 380px;width:380px;overflow-y:auto;
   padding:16px;gap:14px;border-right:1px solid var(--line);
 }
-.pane-right{flex:1;min-width:0;position:relative;background:var(--panel-2)}
+/* No scrolling here — each tab owns the height and scrolls inside itself,
+   so the tab bar stays put and the notes box fills what's left. */
+.pane-right{flex:1;min-width:0;position:relative;background:var(--panel-2);overflow:hidden;display:flex}
+
+/* ============================================================
+   THE TABS
+   Notes, task list and files, each getting the whole pane
+   rather than a slice of it: room to write in, room to read a
+   nested list, room to actually look at a frame.
+
+   Each tab carries its own count, so what's in the other two is
+   visible without going there — which is the usual complaint
+   about tabs, and cheap to answer.
+   ============================================================ */
+.stack{flex:1;min-height:0;display:flex;flex-direction:column}
+
+.tabs{
+  flex:0 0 auto;display:flex;gap:2px;
+  padding:8px 10px 0;border-bottom:1px solid var(--line);
+}
+
+.tab{
+  display:flex;align-items:center;gap:6px;
+  padding:7px 12px 8px;border-radius:8px 8px 0 0;
+  font-size:11.5px;font-weight:600;color:var(--faint);
+  border:1px solid transparent;border-bottom:none;
+  margin-bottom:-1px;transition:color .12s,background .12s;
+  white-space:nowrap;
+}
+.tab:hover{color:var(--muted);background:var(--panel-3)}
+.tab.on{
+  color:var(--text);background:var(--panel);
+  border-color:var(--line);
+}
+.tab.moving{opacity:.5}
+.tab.over{box-shadow:inset 2px 0 0 var(--accent)}
+
+.tab-grip{
+  font-size:9px;color:var(--faint);opacity:0;cursor:grab;
+  transition:opacity .12s;margin-right:-2px;
+}
+.tabs:hover .tab-grip{opacity:.45}
+.tab-grip:active{cursor:grabbing}
+
+.tab-n{
+  font-size:9.5px;font-weight:650;color:var(--faint);
+  font-variant-numeric:tabular-nums;
+  background:var(--panel-3);padding:1px 6px;border-radius:99px;
+}
+.tab.on .tab-n{background:var(--panel-2)}
+/* notes has nothing to count, so it just says whether anything is there */
+.tab-n.dot{
+  background:none;color:var(--accent);font-size:13px;
+  padding:0;line-height:1;
+}
+
+/* ---------- the pane under them ---------- */
+.tabpane{
+  flex:1;min-height:0;display:flex;flex-direction:column;
+  background:var(--panel);
+}
+.pane-notes,.pane-steps{padding:12px 14px 14px}
+.pane-steps{overflow-y:auto}
+
+/* Notes fills the pane: this is the one that wanted room. */
+textarea.notes-full{
+  flex:1;min-height:0;resize:none;line-height:1.55;
+  font-size:12.5px;padding:11px 12px;
+}
+
+/* ---------- files, with the pane to itself ---------- */
+.pane-files{overflow:hidden}
+.pane-files .files-head{border-bottom:1px solid var(--line)}
+.pane-files .filestrip{flex:0 0 auto;border-bottom:1px solid var(--line)}
+.pane-files .preview{flex:1;min-height:0}
+
+.files-empty{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:5px;
+  margin:14px;border:1.5px dashed var(--line-2);border-radius:var(--r);
+  color:var(--faint);cursor:pointer;transition:border-color .12s,color .12s;
+}
+.files-empty:hover{border-color:var(--accent);color:var(--muted)}
+.fe-mark{font-size:26px;line-height:1;opacity:.5}
+.fe-say{font-size:12.5px;font-weight:600}
+.fe-sub{font-size:11px}
 
 @media (max-width:900px){
   .modal-body{flex-direction:column}

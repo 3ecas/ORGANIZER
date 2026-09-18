@@ -1,0 +1,16 @@
+{
+  "version": "0.0.1",
+  "autoPort": false,
+  "configurations": [
+    {
+      "name": "organizer-SCRATCH-COPY-never-the-real-folder",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "/private/tmp/claude-501/-Users-motiondebora-PROJETOS-BERNIE-ORGANIZER/dee8066c-ef69-4d72-a486-56a2da7de508/scratchpad/app/server.py",
+        "8781",
+        "--no-browser"
+      ],
+      "port": 8781
+    }
+  ]
+}

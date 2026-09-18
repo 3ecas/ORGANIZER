@@ -21,11 +21,71 @@
 }
 .cl-bar i.all{background:var(--ok)}
 
-.cl-clear{
-  flex:0 0 auto;font-size:10.5px;color:var(--faint);
+.cl-act{
+  flex:0 0 auto;font-size:10.5px;color:var(--faint);white-space:nowrap;
   padding:2px 6px;border-radius:5px;transition:background .12s,color .12s;
 }
-.cl-clear:hover{background:var(--panel-3);color:var(--danger)}
+.cl-act:hover{background:var(--panel-3);color:var(--text)}
+
+/* ============================================================
+   GROUPS
+   A group holds steps and other groups, as deep as the job goes.
+   It is never done itself — it is as done as everything under it,
+   which is the only honest reading.
+   ============================================================ */
+.cl-folder{border-radius:7px;transition:background .12s}
+.cl-folder.open{background:var(--panel-2)}
+.cl-folder.dragging{opacity:.4}
+.cl-folder.over,.cl-item.over{box-shadow:0 -2px 0 var(--accent)}
+
+.cl-fhead{gap:5px}
+.cl-twist{
+  flex:0 0 14px;color:var(--faint);font-size:9px;
+  transition:transform .15s;
+}
+.cl-folder.open .cl-twist{transform:rotate(90deg)}
+
+.cl-fname{font-weight:650;letter-spacing:.01em}
+
+.cl-fcount{
+  flex:0 0 auto;font-size:9.5px;font-weight:650;color:var(--faint);
+  background:var(--panel-3);padding:1px 6px;border-radius:99px;
+  font-variant-numeric:tabular-nums;
+}
+.cl-fcount.all{background:rgba(70,192,127,.16);color:var(--ok)}
+
+.cl-fadd{
+  flex:0 0 auto;color:var(--faint);font-size:13px;line-height:1;
+  padding:0 4px;border-radius:4px;opacity:0;transition:opacity .12s,color .12s;
+}
+.cl-folder:hover .cl-fadd{opacity:1}
+.cl-fadd:hover{color:var(--accent)}
+
+/* What's inside one. Groups hold groups, so this box nests inside itself
+   and the indent stacks up on its own — which is why it's small. Each
+   level costs 15px, so even four deep only spends 60px of the panel. The
+   guide line is what you actually read the nesting from. */
+.cl-kids{
+  display:flex;flex-direction:column;gap:1px;
+  margin:0 0 4px 7px;padding-left:8px;
+  border-left:1.5px solid var(--line-2);
+}
+/* The line is what you read the nesting from once it's more than one deep,
+   so it firms up while you're in the group rather than staying decorative. */
+.cl-folder:hover > .cl-kids{border-left-color:var(--faint)}
+.cl-kids.into{border-left-color:var(--accent);background:var(--accent-fog)}
+
+/* Only the group being pointed at lights up, never its parents as well. */
+.cl-kids.into .cl-kids{background:none}
+
+.cl-empty{font-size:10.5px;color:var(--faint);padding:4px 5px}
+
+/* A group inside a group doesn't get its own panel — stacking the same
+   tint at every level turns the list into a stepped grey block and the
+   nesting gets harder to read, not easier. The line does that job. */
+.cl-folder.open .cl-folder.open{background:none}
+.cl-folder.open .cl-folder > .cl-fhead{background:none}
+.cl-folder.open .cl-folder > .cl-fhead:hover{background:var(--panel-3)}
 
 /* ---------- the rows ---------- */
 .cl-items{display:flex;flex-direction:column;gap:1px;margin:0 -4px}

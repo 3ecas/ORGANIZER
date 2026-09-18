@@ -73,7 +73,7 @@ ORG.preview = (() => {
       F.del(meta.id, meta.path);
       task.files = task.files.filter(f => f.id !== meta.id);
       ORG.store.touch(task);
-      ORG.editor.refreshFiles();
+      ORG.editor.refreshPanel();
     });
     n.append(rm);
 

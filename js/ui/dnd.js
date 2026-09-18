@@ -481,10 +481,13 @@ ORG.dnd = (() => {
       const into = (e.clientX - d.grabX - rect.left) / rect.width;   // 0..1 of an hour
       const mins = G().snap(hour * 60 + into * 60);
 
-      if (t.endDate) U.toast("Now a timed block, so just the one day");
-      t.date    = target.dataset.date;
-      t.endDate = null;
-      t.start   = U.fmtMin(U.clamp(mins, 0, 1425));
+      /* keep however long it was, just starting somewhere else */
+      const was = ORG.store.durationOf(t) || 60;
+      const at  = U.clamp(mins, 0, 1440 - G().SNAP);
+      ORG.store.moveTo(t, target.dataset.date);
+      t.start = U.fmtMin(at);
+      if (!t.endDate) t.end = U.fmtMin(Math.min(at + was, 1439));
+      else if (!t.end) t.end = U.fmtMin(Math.min(at + 60, 1439));
     }
     else if (kind === "column"){
       // moveTask handles the reordering and the done/not-done sync itself
@@ -518,9 +521,9 @@ ORG.dnd = (() => {
      start time or the length; in week view it's the first or last
      day of a run.
 
-     Stretching a timed job across days drops its clock: the grid
-     draws one day at a time, so "Tuesday 10:00 until Thursday"
-     has no honest shape. It says so rather than doing it quietly.
+     A job keeps its clock when it grows past midnight: the axis
+     is horizontal now, so "Wednesday 14:00 until Friday 18:00"
+     is simply a longer bar.
      ============================================================ */
   let stretch = null;
 
@@ -573,42 +576,45 @@ ORG.dnd = (() => {
     clearMoved();
   }
 
-  /** Week view: the first or last day of the run. */
+  /**
+   * Week view: the first or last day. The clock, if it has one, comes
+   * along — a job that runs to Friday still starts at 14:00 on Wednesday.
+   */
   function stretchDays(d){
     const t = d.task;
     const first = t.date;
-    const last  = t.endDate || t.date;
+    const last  = ORG.store.lastDay(t);
 
     let from = first, to = last;
     if (d.side === "e") to   = U.ymd(U.addDays(U.parseYmd(last), d.steps));
     else                from = U.ymd(U.addDays(U.parseYmd(first), d.steps));
 
     if (to < from) return;                       // dragged past itself; leave it
-    const spans = to > from;
 
-    if (spans && t.start){
-      t.start = null;                            // a run is all-day by definition
-      U.toast("Now all day — a run of days has no start time");
-    }
     t.date    = from;
-    t.endDate = spans ? to : null;
+    t.endDate = to > from ? to : null;
+
+    /* Squeezed back into one day, the two times have to make sense again. */
+    if (!t.endDate && t.start && t.end && U.parseTime(t.end) <= U.parseTime(t.start)){
+      t.end = U.fmtMin(Math.min(U.parseTime(t.start) + G().SNAP, 1439));
+    }
     ORG.store.touch(t);
   }
 
-  /** Day view: the start time or the length. */
+  /** Day view: the clock at whichever end of the job this day holds. */
   function stretchHours(d){
     const t = d.task;
     if (!t.start) return;                        // an all-day bar fills the row
 
     const mins = Math.round(d.steps * 60);
-    const start = U.parseTime(t.start);
+    const solo = !t.endDate;                     // begins and ends the same day
 
     if (d.side === "e"){
-      t.dur = U.clamp(G().snap(t.dur + mins), G().SNAP, 1440 - start);
+      const floor = solo ? U.parseTime(t.start) + G().SNAP : G().SNAP;
+      t.end = U.fmtMin(U.clamp(G().snap(U.parseTime(t.end) + mins), floor, 1439));
     } else {
-      const moved = U.clamp(G().snap(start + mins), 0, start + t.dur - G().SNAP);
-      t.dur   = t.dur + (start - moved);
-      t.start = U.fmtMin(moved);
+      const ceiling = solo ? U.parseTime(t.end) - G().SNAP : 1439;
+      t.start = U.fmtMin(U.clamp(G().snap(U.parseTime(t.start) + mins), 0, ceiling));
     }
     ORG.store.touch(t);
   }

@@ -11,9 +11,11 @@ ORG.store = (() => {
   const KEY = "organizer.v2";
   const VERSION = 2;
   const MAX_SPAN = 3;          // a card may cover up to 3x3 cells
+  const SNAP_MIN = 15;         // the shortest stretch of time worth drawing
 
   let state = null;
   let query = "";
+  let terms = [];              // the query, read as dates/times/words
   let storageOK = true;
 
   /* Which revision of data.json we're working from, and whether another
@@ -31,22 +33,42 @@ ORG.store = (() => {
    * rest of the app never has to guard for undefined.
    *
    *  space     "work" | "personal"   which work area it belongs to
-   *  date      "YYYY-MM-DD" | null   where it sits on the calendar (first day)
-   *  endDate   "YYYY-MM-DD" | null   last day of a run; null = just the one day
-   *  start     "HH:MM" | null        null = untimed (all-day strip)
-   *  dur       minutes               start + dur is the end time shown in the form
-   *  due       "YYYY-MM-DD" | null   deadline, independent of `date`
+   *  date      "YYYY-MM-DD" | null   the day it starts
+   *  start     "HH:MM" | null        when on that day; null = all day
+   *  endDate   "YYYY-MM-DD" | null   the day it ends; null = the same day
+   *  end       "HH:MM" | null        when on that day; null when all-day
+   *  due       "YYYY-MM-DD" | null   deadline, independent of the above
    *  files     [{id, name, size, type, at}]  blobs live in core/files.js
    */
   function normalizeTask(t){
     if (!t || typeof t !== "object") return null;
     const isDate = v => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
 
+    const time  = v => typeof v === "string" && /^\d{1,2}:\d{2}/.test(v) ? v.slice(0,5) : null;
     const date  = isDate(t.date) ? t.date : null;
-    const start = typeof t.start === "string" && /^\d{1,2}:\d{2}/.test(t.start) ? t.start.slice(0,5) : null;
-    /* A run of days only means anything for an all-day task that's actually
-       on the calendar, and only forwards. Anything else isn't a run. */
-    const endDate = (date && !start && isDate(t.endDate) && t.endDate > date) ? t.endDate : null;
+    const start = time(t.start);
+
+    /* A run of days, forwards, on something that's actually on the calendar.
+       It may carry a clock now: "Wed 14:00 until Fri 18:00" is one job, and
+       the timeline draws it as one bar. That used to be forbidden because
+       the calendar was a vertical hour grid that could only draw a day at a
+       time — a reason that left with the grid. */
+    const endDate = (date && isDate(t.endDate) && t.endDate > date) ? t.endDate : null;
+
+    /* The clock it finishes at, on its last day. Saves made before this
+       stored a length in minutes instead; carry those over. */
+    let end = time(t.end);
+    if (start && !end){
+      const mins = t.dur != null && Number.isFinite(+t.dur) ? +t.dur : 60;
+      end = U.fmtMin(Math.min(U.parseTime(start) + mins, 1439));
+    }
+    if (!start) end = null;
+    /* On a single day the end has to come after the start. Across days it
+       needn't — finishing at 09:00 on Friday having begun at 14:00 on
+       Wednesday is perfectly ordinary. */
+    if (start && end && !endDate && U.parseTime(end) <= U.parseTime(start)){
+      end = U.fmtMin(Math.min(U.parseTime(start) + 15, 1439));
+    }
 
     return {
       id:     t.id || U.uid(),
@@ -57,8 +79,7 @@ ORG.store = (() => {
          title does, including one-line chips on the calendar. */
       subtitle: String(t.subtitle ?? "").slice(0, 160),
       notes:  String(t.notes ?? ""),
-      date, endDate, start,
-      dur:    t.dur != null && Number.isFinite(+t.dur) ? U.clamp(+t.dur, 15, 1440) : 60,
+      date, endDate, start, end,
       due:    isDate(t.due) ? t.due : null,
       /* which label (client) this belongs to. `color` is what the field
          was called before labels had names, and still reads fine. */
@@ -86,14 +107,11 @@ ORG.store = (() => {
          lane 0 the next time it was loaded — everything on one row. */
       lane: t.lane == null || !Number.isFinite(+t.lane)
         ? null : Math.max(0, Math.round(+t.lane)),
-      /* the checklist inside the card — what actually has to be done */
-      steps: Array.isArray(t.steps)
-        ? t.steps.map(s => ({
-            id:   s.id || U.uid(),
-            text: String(s.text ?? "").slice(0, 300),
-            done: !!s.done,
-          }))
-        : [],
+      /* The checklist inside the card. A tree: an entry is either a step
+         or a group holding more of either. A plain list is simply a tree
+         with no groups in it, so there's no second kind of list to choose
+         between when you make a card. */
+      steps: cleanList(t.steps),
       files: Array.isArray(t.files)
         ? t.files.map(f => ({
             id:   f.id || U.uid(),
@@ -224,46 +242,166 @@ ORG.store = (() => {
 
   /* ============================================================
      CHECKLIST — the steps inside a card
-     ============================================================ */
-  const progress = t => ({
-    done:  t.steps.filter(s => s.done).length,
-    total: t.steps.length,
-  });
+     A tree. An entry is either a step or a group, and a group holds
+     entries of either kind, as deep as the work actually goes.
 
-  function addStep(t, text, index){
+     Everything below works in terms of "leaves" — the actual things
+     to do — so a group never counts as a task itself at any depth,
+     and a plain list is simply a tree with no groups in it.
+     ============================================================ */
+
+  const MAX_DEPTH = 24;        // a stop against a damaged file, not a rule
+
+  /* Note the explicit depth on every call. `list.map(cleanEntry)` would
+     hand the ARRAY INDEX in as the depth — so the third group in a list
+     would be read as three levels down. That mistake cost a group its
+     children once; keep the recursion spelled out. */
+  const cleanList = (list, depth = 0) =>
+    Array.isArray(list) ? list.flatMap(s => cleanEntry(s, depth)) : [];
+
+  /** One entry in, zero or more out — the stop flattens rather than drops. */
+  function cleanEntry(s, depth){
+    if (!s || typeof s !== "object") return [];
+    const base = {
+      id:   s.id || U.uid(),
+      text: String(s.text ?? "").slice(0, 300),
+    };
+    if (!s.folder) return [{ ...base, done: !!s.done }];
+
+    const children = cleanList(s.children, depth + 1);
+    /* Past the stop the group's contents are lifted out rather than thrown
+       away. A file nested this deep is damaged, and quietly deleting the
+       steps inside it is a terrible way to find that out. */
+    if (depth >= MAX_DEPTH) return children;
+
+    return [{ ...base, folder:true, open: s.open !== false, children }];
+  }
+
+  /** Every actual step, groups opened out, in the order you'd read them. */
+  const leafList = list => list.flatMap(s => s.folder ? leafList(s.children) : [s]);
+  const leaves = t => leafList(t.steps);
+
+  const progress = t => {
+    const all = leaves(t);
+    return { done: all.filter(s => s.done).length, total: all.length };
+  };
+
+  /** How far through one group you are — counting all the way down. */
+  const folderProgress = f => {
+    const all = leafList(f.children);
+    return { done: all.filter(s => s.done).length, total: all.length };
+  };
+
+  /** Where an entry lives: the array holding it, its index, and its parent. */
+  function locate(t, id, list = t.steps, folder = null){
+    const i = list.findIndex(s => s.id === id);
+    if (i !== -1) return { list, index: i, folder };
+    for (const s of list){
+      if (!s.folder) continue;
+      const hit = locate(t, id, s.children, s);
+      if (hit) return hit;
+    }
+    return null;
+  }
+
+  const stepById = (t, id) => { const at = locate(t, id); return at ? at.list[at.index] : null; };
+
+  /** The group with this id, at whatever depth it sits. */
+  function folderById(t, id){
+    const at = id && locate(t, id);
+    return at && at.list[at.index].folder ? at.list[at.index] : null;
+  }
+
+  /** How deep an entry sits — 0 at the top. Drives the indent. */
+  function depthOf(t, id){
+    let d = 0, at = locate(t, id);
+    while (at && at.folder){ d++; at = locate(t, at.folder.id); }
+    return d;
+  }
+
+  /** Is `id` inside `folder`, at any depth? Guards a group being dropped
+      into its own contents, which would cut it out of the list entirely. */
+  function contains(folder, id){
+    return folder.children.some(c => c.id === id || (c.folder && contains(c, id)));
+  }
+
+  /** Add a step, optionally inside a group and at a position in it. */
+  function addStep(t, text, index, folderId){
     const step = { id:U.uid(), text:String(text || "").slice(0, 300), done:false };
-    if (Number.isInteger(index)) t.steps.splice(U.clamp(index, 0, t.steps.length), 0, step);
-    else t.steps.push(step);
+    const f = folderById(t, folderId);
+    const list = f ? f.children : t.steps;
+    if (Number.isInteger(index)) list.splice(U.clamp(index, 0, list.length), 0, step);
+    else list.push(step);
     touch(t);
     return step;
+  }
+
+  /** Add a group, optionally inside another one. */
+  function addFolder(t, name, index, folderId){
+    const f = { id:U.uid(), text:String(name || "New group").slice(0, 300),
+                folder:true, open:true, children:[] };
+    const parent = folderById(t, folderId);
+    const list = parent ? parent.children : t.steps;
+    if (Number.isInteger(index)) list.splice(U.clamp(index, 0, list.length), 0, f);
+    else list.push(f);
+    touch(t);
+    return f;
   }
 
   function updateStep(t, id, patch){
-    const step = t.steps.find(s => s.id === id);
+    const step = stepById(t, id);
     if (!step) return null;
     Object.assign(step, patch);
-    // text edits shouldn't repaint the whole app on every keystroke
-    patch.text !== undefined ? save(true) : touch(t);
+    /* text edits and opening a folder shouldn't repaint the whole app */
+    const quiet = patch.text !== undefined || patch.open !== undefined;
+    quiet ? save(true) : touch(t);
     return step;
   }
 
+  /**
+   * Remove an entry. A group's contents move up into wherever the group
+   * was rather than being deleted — losing a morning's work because you
+   * tidied a heading away would be an unkind way to find out how groups
+   * behave. Anything nested inside keeps its own shape on the way up.
+   */
   function removeStep(t, id){
-    t.steps = t.steps.filter(s => s.id !== id);
+    const at = locate(t, id);
+    if (!at) return;
+    const [gone] = at.list.splice(at.index, 1);
+    if (gone.folder && gone.children.length){
+      at.list.splice(at.index, 0, ...gone.children);
+      const n = leafList(gone.children).length;
+      U.toast(`Group removed — its ${n} step${n === 1 ? "" : "s"} moved out`);
+    }
     touch(t);
   }
 
-  function moveStep(t, id, index){
-    const from = t.steps.findIndex(s => s.id === id);
-    if (from === -1) return;
-    const [step] = t.steps.splice(from, 1);
-    t.steps.splice(U.clamp(index, 0, t.steps.length), 0, step);
+  /** Move an entry to a position, optionally into or out of a group. */
+  function moveStep(t, id, index, folderId){
+    const at = locate(t, id);
+    if (!at) return;
+    const moving = at.list[at.index];
+
+    /* A group can go inside another group, but never inside itself or
+       anything it holds — that would take it off the list altogether. */
+    const f = folderById(t, folderId);
+    if (f && moving.folder && (f.id === moving.id || contains(moving, f.id))) return;
+    const to = f ? f.children : t.steps;
+
+    at.list.splice(at.index, 1);
+    const cap = to === at.list && index > at.index ? index - 1 : index;
+    to.splice(U.clamp(cap, 0, to.length), 0, moving);
     touch(t);
   }
 
-  const clearDoneSteps = t => {
-    t.steps = t.steps.filter(s => !s.done);
+  /** Sweep finished steps at every depth. Groups stay, even when emptied. */
+  function clearDoneSteps(t){
+    const sweep = list => list
+      .filter(s => s.folder || !s.done)
+      .map(s => s.folder ? { ...s, children: sweep(s.children) } : s);
+    t.steps = sweep(t.steps);
     touch(t);
-  };
+  }
 
   /* ============================================================
      DEFAULTS / SEED
@@ -288,7 +426,7 @@ ORG.store = (() => {
     const seed = [
       { title:"Videoclip — “Nightdrive”", subtitle:"First cut · Aurora Records",
         notes:"3:42 track. Client wants a first cut by Friday.",
-        date:today, start:"09:30", dur:120, due:fri, label:"client-a",
+        date:today, start:"09:30", end:"11:30", due:fri, label:"client-a",
         status:"doing", order:0,
         steps:[
           { id:U.uid(), text:"Listen through, mark the beats", done:true },
@@ -299,9 +437,9 @@ ORG.store = (() => {
           { id:U.uid(), text:"Grade and export the master",     done:false },
         ] },
       { title:"Client call — feedback round 2", notes:"",
-        date:today, start:"15:00", dur:45, label:"review", status:"doing", order:1 },
+        date:today, start:"15:00", end:"15:45", label:"review", status:"doing", order:1 },
       { title:"Render + export deliverables", notes:"ProRes 4444 master + H.264 web cut.",
-        date:tmr, start:null, dur:60, due:tmr, label:"delivered", status:"review", order:0 },
+        date:tmr, start:null, due:tmr, label:"delivered", status:"review", order:0 },
       { title:"Rebuild the type animation rig", notes:"No brief yet — parked here until it lands.",
         date:null, label:"admin", status:"backlog", order:0 },
       { title:"Update showreel", notes:"", date:null, status:"backlog", order:1,
@@ -343,8 +481,12 @@ ORG.store = (() => {
         lastDated: "week",            // calendar view to return to when leaving the board
         hideDone: false,
         sidebar: true,                // the sidebar is showing
-        dayStart: 7,                  // first hour drawn in day/week
-        dayEnd: 23,                   // last hour drawn
+        dayStart: 8,                  // first hour drawn in day view
+        dayEnd: 22,                   // last hour drawn
+        /* the order of the tabs on the right of a card. One setting for
+           every card — how you read a job is a habit, not a fact about any
+           one of them — and the first one is what a card opens on. */
+        cardOrder: ["steps", "notes", "files"],
       },
     }));
   }
@@ -389,7 +531,17 @@ ORG.store = (() => {
       hidden: Array.isArray(raw.hidden) ? raw.hidden : [],
       columns: hydrateColumns(raw.columns, d.columns),
       settings: { ...d.settings, ...(raw.settings || {}),
-                  space: ORG.spaces.idOf((raw.settings || {}).space) },
+                  space: ORG.spaces.idOf((raw.settings || {}).space),
+                  /* the old 7-to-23 window was only ever a default, and there
+                     is no UI to have chosen it deliberately — move it on */
+                  ...(((raw.settings || {}).dayStart === 7 &&
+                       (raw.settings || {}).dayEnd === 23)
+                      ? { dayStart:8, dayEnd:22 } : {}),
+                  /* Saves that still hold the old tab order get the new one.
+                     Only if it's untouched — a deliberate arrangement is a
+                     choice and stays put. */
+                  ...(String((raw.settings || {}).cardOrder) === "notes,steps,files"
+                      ? { cardOrder:["steps", "notes", "files"] } : {}) },
     }));
   }
 
@@ -528,13 +680,9 @@ ORG.store = (() => {
      ============================================================ */
   const byId = id => state.tasks.find(t => t.id === id);
 
-  const matches = t => {
-    if (!query) return true;
-    return t.title.toLowerCase().includes(query)
-        || t.notes.toLowerCase().includes(query)
-        || labelName(t).toLowerCase().includes(query)
-        || t.files.some(f => f.name.toLowerCase().includes(query));
-  };
+  /* core/search.js decides what a query means — text, but also dates and
+     clock times, and every term has to match. */
+  const matches = t => ORG.search.test(t, terms);
 
   /** Everything still in play — archived work is excluded everywhere. */
   const live = () => state.tasks.filter(t => !t.archivedAt);
@@ -562,9 +710,33 @@ ORG.store = (() => {
     return key > t.date && key <= t.endDate;
   }
 
-  /** How many days a task runs for. 1 unless it's an all-day run. */
+  /** How many days a task runs for. 1 unless it runs across days. */
   const spanDays = t =>
     t.date && t.endDate ? U.daysBetween(t.date, t.endDate) + 1 : 1;
+
+  /** The day it finishes — the same day unless it runs. */
+  const lastDay = t => t.endDate || t.date;
+
+  /**
+   * Which stretch of one day a task occupies, in minutes past midnight.
+   * null when it isn't on that day at all.
+   *
+   * A job running Wed 14:00 to Fri 18:00 fills Thursday, starts partway
+   * through Wednesday and stops partway through Friday — which is what
+   * lets one bar mean one job rather than three.
+   */
+  function spanOnDay(t, key){
+    if (!covers(t, key)) return null;
+    if (!t.start) return { from:0, to:1440 };
+
+    const from = key === t.date      ? U.parseTime(t.start) : 0;
+    const to   = key === lastDay(t)  ? U.parseTime(t.end || t.start) : 1440;
+    return { from, to: Math.max(to, from + SNAP_MIN) };
+  }
+
+  /** Minutes a single-day job lasts. 0 for anything all-day or running. */
+  const durationOf = t => (t.start && t.end && !t.endDate)
+    ? Math.max(SNAP_MIN, U.parseTime(t.end) - U.parseTime(t.start)) : 0;
 
   const tasksOn = d => {
     const key = typeof d === "string" ? d : U.ymd(d);
@@ -598,7 +770,11 @@ ORG.store = (() => {
     t.date = key;
   }
 
-  const setQuery = q => { query = (q || "").trim().toLowerCase(); U.bus.emit("change"); };
+  const setQuery = q => {
+    query = (q || "").trim().toLowerCase();
+    terms = ORG.search.parse(query);
+    U.bus.emit("change");
+  };
   const getQuery = () => query;
 
   /* ============================================================
@@ -962,14 +1138,16 @@ ORG.store = (() => {
     addLabel, updateLabel, removeLabel, sortLabels, MAX_COLORS,
     boardTasks, columnOf, cardsIn, moveTask, setDone,
     addColumn, renameColumn, removeColumn, moveColumn,
-    progress, addStep, updateStep, removeStep, moveStep, clearDoneSteps,
+    progress, folderProgress, leaves, stepById, locate, depthOf, folderById,
+    addStep, addFolder, updateStep, removeStep, moveStep, clearDoneSteps,
     get state(){ return state; },
     get storageOK(){ return storageOK; },
     /** Set once a synced copy of data.json has moved past the one we loaded. */
     get stale(){ return stale; },
     VERSION, KEY,
     load, save, setSaved, replaceState, defaults, normalizeTask, hydrate,
-    byId, visible, live, tasksOn, covers, spanDays, moveTo, setQuery, getQuery,
+    byId, visible, live, tasksOn, covers, spanDays, lastDay, spanOnDay, durationOf,
+    moveTo, setQuery, getQuery,
     archived, archivedCount, archive, restore, archiveDone,
     todoTasks, wallOrder, setPin, setSpan, tidyPins, cellsOf, footprintFree, MAX_SPAN,
     setLane,

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleName</key>
+	<string>Organizer</string>
+	<key>CFBundleDisplayName</key>
+	<string>Organizer</string>
+	<key>CFBundleIdentifier</key>
+	<string>local.organizer.launcher</string>
+	<key>CFBundleExecutable</key>
+	<string>Organizer</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleVersion</key>
+	<string>1.0</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleIconFile</key>
+	<string>Organizer</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<!-- No Dock icon for the launcher itself. It runs behind the window
+	     it opens, holding the server up, and one icon in the Dock is
+	     less confusing than two. -->
+	<key>LSUIElement</key>
+	<true/>
+</dict>
+</plist>

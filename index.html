@@ -202,7 +202,7 @@
 
   <div class="modal-body">
 
-    <!-- ------------------------------------------- LEFT: information -->
+    <!-- ---------------------------------------- LEFT: just the facts -->
     <section class="pane pane-left" id="pane-left">
 
       <div class="toggle" id="m-done">Completed <span class="track"></span></div>
@@ -223,44 +223,38 @@
         <div class="lb" id="m-labels"></div>
       </div>
 
-      <div class="field">
-        <label>Task list</label>
-        <div class="cl" id="m-steps"></div>
-      </div>
-
       <div class="divider"></div>
 
       <div class="toggle" id="m-sched">On the calendar <span class="track"></span></div>
 
       <div id="m-schedfields" style="display:flex;flex-direction:column;gap:14px">
-        <div class="field">
-          <label>Scheduled for</label>
-          <input type="date" class="input" id="m-date">
-        </div>
-
-        <div class="toggle" id="m-allday">All day / no fixed time <span class="track"></span></div>
-
-        <div class="grid2" id="m-timefields">
+        <div class="grid2">
           <div class="field">
-            <label>Start</label>
+            <label>Starts on</label>
+            <input type="date" class="input" id="m-date">
+          </div>
+          <div class="field" id="m-startwrap">
+            <label>at</label>
             <input type="time" class="input" id="m-start" step="300">
           </div>
+        </div>
+
+        <div class="grid2">
           <div class="field">
-            <label>End</label>
+            <label>Ends on</label>
+            <div class="withclear">
+              <input type="date" class="input" id="m-until" title="Leave empty if it finishes the same day.">
+              <button class="btn" id="m-untilclear" title="Finishes the same day">&times;</button>
+            </div>
+          </div>
+          <div class="field" id="m-endwrap">
+            <label>at</label>
             <input type="time" class="input" id="m-end" step="300">
           </div>
         </div>
 
-        <!-- only for all-day work: a job that runs across several days -->
-        <div class="field" id="m-spanfield">
-          <label>Last day</label>
-          <div class="withclear">
-            <input type="date" class="input" id="m-until"
-                   title="For a job that runs across several days. Leave empty for a single day.">
-            <button class="btn" id="m-untilclear" title="Just the one day">&times;</button>
-          </div>
-          <div class="hint" id="m-spannote"></div>
-        </div>
+        <div class="toggle" id="m-allday">All day / no fixed time <span class="track"></span></div>
+        <div class="hint" id="m-spannote"></div>
       </div>
 
       <div class="field">
@@ -271,34 +265,12 @@
         </div>
       </div>
 
-      <div class="divider"></div>
-
-      <div class="divider"></div>
-
-      <div class="field">
-        <label>Notes</label>
-        <textarea class="input" id="m-notes" placeholder="Brief, references, feedback, deliverables…"></textarea>
-      </div>
-
     </section>
 
-    <!-- ----------------------------------------------- RIGHT: files -->
+    <!-- --------------------------------- RIGHT: where you work -->
     <section class="pane pane-right" id="pane-right">
-
-      <div class="files-head">
-        <span class="ft">Files</span>
-        <span class="fsize" id="m-filecount">No files</span>
-        <span class="fsize" id="m-filesize"></span>
-        <div class="spacer"></div>
-        <button class="btn sm" id="m-addfiles">
-          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Attach
-        </button>
-      </div>
-
-      <div class="filestrip" id="filestrip"></div>
-      <div class="preview" id="preview"></div>
+      <div class="stack" id="m-stack"></div>
       <div class="dropveil" id="dropveil">Drop to attach</div>
-
     </section>
 
   </div>
@@ -317,6 +289,14 @@
   </div>
   <div class="sheet-note">Archived work keeps its hours, its checklist and its files —
   it just stays out of every view. <b>Restore</b> puts it back.</div>
+  <div class="sheet-tools">
+    <div class="arch-find">
+      <svg viewBox="0 0 24 24" class="arch-find-ic"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input class="arch-search" id="arch-search" type="text" placeholder="Search archived work…" spellcheck="false" autocomplete="off">
+      <button class="arch-clear" id="arch-clear" title="Clear" hidden>×</button>
+    </div>
+    <div class="arch-filters" id="arch-filters"></div>
+  </div>
   <div class="sheet-body" id="arch-list"></div>
 </div>
 
@@ -347,6 +327,7 @@
      working either way. Load order is dependency order.
      ================================================================== -->
 <script src="js/core/util.js"></script>
+<script src="js/core/search.js"></script>
 <script src="js/core/palette.js"></script>
 <script src="js/core/spaces.js"></script>
 <script src="js/core/files.js"></script>
@@ -361,6 +342,7 @@
 <script src="js/ui/preview.js"></script>
 <script src="js/ui/hover.js"></script>
 <script src="js/ui/checklist.js"></script>
+<script src="js/ui/cardpanel.js"></script>
 <script src="js/ui/editor.js"></script>
 <script src="js/ui/archive.js"></script>
 <script src="js/ui/shortcuts.js"></script>

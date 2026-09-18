@@ -136,13 +136,13 @@ ORG.util = (() => {
   };
 
   let toastTimer;
-  const toast = msg => {
+  const toast = (msg, ms = 2200) => {
     const t = $("#toast");
     if (!t) return;
     t.textContent = msg;
     t.classList.add("on");
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove("on"), 2200);
+    toastTimer = setTimeout(() => t.classList.remove("on"), ms);
   };
 
   /** Tiny pub/sub so modules never import each other's render functions. */

@@ -7,13 +7,60 @@ internet, no subscription, no cloud. Everything it knows lives in this folder.
 
 ## Start it
 
-**Double-click `start.command`.**
+**Double-click `Organizer.app`** — or `Organizer.bat` on the PC.
 
-A Terminal window opens and your browser follows. Keep the Terminal window open
-while you work; closing it quits the app.
+The app opens in a window of its own: no tabs, no address bar, no Terminal
+window to keep out of the way. Quit the window and everything behind it stops.
 
 The first time, macOS may refuse to run it. Right-click the file, choose *Open*,
 confirm once, and it won't ask again.
+
+### What that window actually is
+
+Firefox with its tab strip and address bar hidden — 84 pixels of browser
+reduced to a 32-pixel title bar, which is just enough to drag the window and
+close it.
+
+It stays a real browser on purpose. The app asks for a confirmation dialog in
+seven places before it deletes anything, opens two file pickers, and saves
+backups through download links. A hand-built window would have to reimplement
+all three, and every one of them is somewhere a silent gap could open up later.
+
+On a PC without Firefox it uses Edge's app mode instead, which amounts to the
+same window and comes with Windows.
+
+The Firefox profile it uses is kept beside Firefox's own, **not** in this
+folder. A profile is a set of databases held open by a running program, and
+this folder gets synced between two machines — syncing one while it's in use
+is a good way to corrupt it. Nothing in there is worth keeping anyway; losing
+it costs one relaunch.
+
+If a Firefox update ever puts the toolbars back, nothing breaks — it just looks
+like a browser again. `desktop/firefox.py` is the file to fix.
+
+Want your own icon on it: select `Organizer.app`, press <kbd>⌘I</kbd>, and drag
+an image onto the small icon at the top left.
+
+### start.command opens the same window
+
+`start.command` and `start.bat` now do exactly what `Organizer.app` does — the
+one difference is that they leave a Terminal window open behind the app, and
+closing it quits. Use them if you like seeing what's going on; use
+`Organizer.app` if you'd rather not have the extra window.
+
+For an ordinary browser tab instead of a window, run either from a terminal
+with `--tab`:
+
+```
+./start.command --tab
+```
+
+Worth having as something you can ask for rather than only as what you get when
+the window fails.
+
+Starting it twice is fine. The launcher asks whether this folder is already
+being served before it starts anything, and if it is, it opens another window
+onto what's already running instead of a second copy.
 
 > Don't open `index.html` directly. The app still loads, but it can't reach the
 > folder — your work would be trapped inside the browser instead, and imported
@@ -130,10 +177,30 @@ appearing in the calendar, the board, the wall and search.
 
 - **Archive a single card** from the box icon in its header.
 - **Archive the whole Done list** from the *Archive* action on that column.
-- The **archive button in the top bar** shows how many are put away, and opens
-  them grouped by month. Search reaches inside it.
+- The **archive button in the top bar** shows how many are put away.
 - **Restore** puts one back in play. Deleting from there is the only thing in
   Organizer that really destroys a task, and it says so before it does.
+
+**Finding something in there.** It opens as one flat list, newest first, with
+its own search box and a row of client chips.
+
+- **The search box** is the archive's own, not the one in the top bar — hunting
+  through finished work shouldn't disturb the view you were on. It looks at
+  titles, subtitles, notes, client names, task steps and file names, so *"galp"*
+  or *"endframe"* both find things. It takes the cursor as soon as the archive
+  opens, so you can just start typing.
+- **The client chips** are built from what's actually in the archive: a client
+  with nothing archived doesn't get a chip. Click one to see only that client's
+  work, click several to see several, click *All* to clear. The header counts
+  along — *"3 of 41"*.
+- **Anything with no client gets a "No label" chip** at the end of the row,
+  with a dashed dot instead of a colour. It's a leftover rather than a client,
+  so it sorts last, and it only appears if there's actually something in it.
+- **Escape** clears the search box first and only closes the archive once it's
+  empty, so a search is never one keypress away from losing the whole sheet.
+
+The chip row hides itself entirely when everything in the archive shares one
+client — there'd be nothing to choose between.
 
 ### The Export button
 
@@ -167,6 +234,44 @@ anything.
 
 The client labels are shared — the same list in both — but their counts are
 per space.
+
+### Searching
+
+Both search boxes — the one in the top bar and the archive's own — read the
+same way. **A query is split on the spaces and every part has to match**, so
+typing two things narrows rather than widens.
+
+**Dates count as a search term.** Type `16 september` and you get every job you
+were on that day — including one that runs from the 14th to the 18th, because
+the 16th is a day you were working on it. All of these mean the same thing:
+
+```
+16 september     september 16     16 sep     16 setembro
+16/09/2026       16/09            2026-09-16
+```
+
+And the looser ones:
+
+| Type | Finds |
+|---|---|
+| `september` | everything in any September |
+| `2026` | everything that year |
+| `today` `yesterday` `tomorrow` | that day |
+| `14:00` `2pm` `9h` | jobs running at that time of day |
+
+A date matches a job's **run of days** and its **due date**. It does *not*
+match the day something was archived — filing work away isn't a day you worked
+on it, and an afternoon spent tidying would otherwise stamp thirty old jobs
+with the same date.
+
+**Crossing terms is the point.** `galp 16 september` is Galp work on the 16th,
+not everything Galp plus everything on the 16th. In the archive you can cross a
+client chip with a date the same way.
+
+Anything that isn't a date or a time stays plain text, matched against the
+title, subtitle, notes, client name, task steps and file names. So `v16` and a
+bare `16` behave as they always did rather than being quietly read as the
+sixteenth — a version number shouldn't become a date because it looks like one.
 
 ### Dragging
 
@@ -276,7 +381,7 @@ Done list and make the board look broken. It only affects the calendar views.
 ### The task list inside a card
 
 A card is the *job*; the task list is **what actually has to be done on it**.
-Open any card and it sits just under the client label.
+Open any card and it's in the right-hand panel.
 
 On a videoclip that might be: mark the beats → moodboard → storyboard →
 animate → type treatment → grade and export.
@@ -289,12 +394,53 @@ animate → type treatment → grade and export.
 - **Drag the ⠿ handle** to reorder.
 - **Clear done** sweeps out the finished ones.
 
+**Groups.** Press **＋ Group** and you get a folder in the list. Drag a step
+onto it to put it in; drag it back out to the main list to take it out. Click
+the ▸ to fold a group away — handy once a round is finished and you just want
+it out of sight. A group heading shows its own **1/3**, and **Return** on the
+heading starts a step inside it.
+
+**Groups go inside groups, as deep as the job actually goes.** On a heading,
+**＋** adds a step in there and **⊞** adds another group in there. You can drag
+a whole group into another one and everything under it travels along. So a job
+can be filed the way it's really shaped:
+
+```
+30s master
+  Round 1
+    Animation
+      Scene 01 — logo build
+      Scene 02 — product turn
+    Sound design pass
+  Round 2
+    Client notes 12/09
+6s bumper
+  Recut from the master
+Deliver to the agency
+```
+
+There's still only one kind of list — a plain list is just a list with no
+groups in it, so there's nothing to choose between when you make a card.
+
+A group is never "done" itself — it's as done as everything underneath it, all
+the way down. So **Round 1** above reads 2/3 while **30s master** reads 2/5,
+and the card's own **3/8** counts only the steps, never the headings.
+
+**Deleting a group never takes the work with it.** Its contents move out into
+wherever the group was sitting — not up to the top — keeping their own shape,
+and it tells you how many steps moved. The × on a heading is safe to press.
+
+The indent is deliberately small and the line down the left is what you read
+the nesting from, so going a few levels deep doesn't eat the width you need for
+the words.
+
 On the **board** the whole list shows on the card, with tickable boxes and a
 progress bar — so you can see what's left and cross things off without opening
-anything. In the sidebar it's condensed to a **3/6** badge.
+anything. Group headings stay out of that summary: on a card you want the work,
+not the filing. In the sidebar it's condensed to a **3/9** badge.
 
-A card's list is recorded on the card itself, so reordering the lists never
-moves a card between them.
+A card's board list is recorded on the card itself, so reordering the lists
+never moves a card between them.
 
 Ticking every step does *not* complete the task — finishing the work and
 calling the job done are two different decisions, so that stays yours.
@@ -321,25 +467,56 @@ or scroll.
 
 ### The task window
 
-Opens in two halves:
+Opens in two halves, split by what each side is *for*.
 
-- **Left — everything about the job.** Which **space** and **board list** it's
-  in, the **client label**, the **task list**, whether it's on the calendar, the
-  **date** with either a **start and end time** or a **last day**, the **due
-  date**, and notes.
-- **Right — the files.** Drag them straight in from Finder, paste a screenshot,
-  or click *Attach*. Images, video, audio, PDFs and text preview inline;
-  anything else gets an icon plus *Open* and *Save as…*. Under the preview it
-  tells you which folder the copy went into.
+**Left — the facts.** Short, fixed, no scrolling: which **space** and **board
+list** it's in, the **client label**, when it **starts** (day and time), when it
+**ends** (day and time), and the **due date**. These are the things you set once
+and glance at.
 
-### Start and end times
+**Right — the work.** Three tabs, each getting the whole pane:
 
-A scheduled task has a **start** and an **end** — set both and the bar on the
-calendar sizes itself to match. Dragging the end of a bar in Day view changes
-the end time, and vice versa; they're the same thing.
+- **Task list** — the steps and groups, as above, with room for the nesting to
+  be read. Scrolls on its own; the tabs stay put. This is where a card opens.
+- **Notes** — the brief, the feedback, what changed today. The box fills the
+  pane, so it's somewhere to actually write rather than a slot to jot in.
+- **Files** — drag them straight in from Finder, paste a screenshot, or click
+  *Attach*. Images, video, audio, PDFs and text preview inline at a size worth
+  looking at; anything else gets an icon plus *Open* and *Save as…*. Under the
+  preview it tells you which folder the copy went into. With nothing attached
+  the whole pane becomes the drop target.
 
-An end time at or before the start gets nudged to fifteen minutes, since the
-calendar draws one day at a time and can't show an overnight block properly.
+Each tab carries its own count — **3/8**, **2**, a dot when there are notes —
+so you can see what's in the other two without going there.
+
+You can **drop files onto the right pane from any tab**, not just Files; the
+whole pane lights up and it switches over once they land.
+
+**A card always opens on the first tab** — Task list, unless you change the
+order — so opening one is the same move every time rather than a guess about
+where you left off.
+
+**Drag a ⠿ tab** to reorder them, and that order applies to **every card**.
+That's also how you choose what a card opens on: whichever tab you put first.
+How you read a project is a habit, not a fact about any one job.
+
+### A job has a start and an end
+
+Four fields, two of them dates: **starts on** 16 Sep **at** 14:00, **ends on**
+18 Sep **at** 18:00. That's one card, one bar, however many days it covers —
+you never make a second card because the work carried on into tomorrow.
+
+The updates that arrive each day go *inside* that card: a step on the task list
+for each thing that comes back, and the end date pushed out as the job grows.
+
+- **Dragging the end of a bar** does the same thing. In Week that's the last
+  day; in Day it's the clock, snapped to quarter hours.
+- **All day** drops the hours and keeps the dates.
+- Within a single day the end has to come after the start, and gets nudged if
+  it doesn't. Across days it needn't — finishing Friday at 09:00 having begun
+  Wednesday at 14:00 is an ordinary week.
+
+Day view draws **08:00 to 22:00**.
 
 ### Jobs that run across days
 
@@ -439,7 +616,13 @@ build step, no dependencies — open any file and edit it.
 
 ```
 index.html            markup + the script tags, in load order
-start.command         the launcher you double-click on a Mac
+Organizer.app         double-click this on a Mac — opens it as a window
+Organizer.bat         the same, for Windows
+launch.py             picks a port, starts the server, opens the window
+desktop/
+  window.py           finds a browser and opens a window with no browser in it
+  firefox.py          the profile that hides Firefox's tabs and address bar
+start.command         the same window, with a Terminal behind it
 start.bat             the same, for Windows
 server.py             serves the folder and handles saving to disk
 css/
@@ -452,7 +635,7 @@ css/
   timeline.css        day and week, along a horizontal axis
   board.css           lists and cards
   todo.css            the to-do wall
-  editor.css          the two-pane task window
+  editor.css          the two-pane task window and its tabs
   checklist.css       the task list inside a card
   labels.css          the client-label picker
   hover.css           the hover preview
@@ -460,6 +643,7 @@ css/
 js/
   core/
     util.js           dates, formatting, colour maths, event bus
+    search.js         what a query means: text, dates, clock times
     palette.js        the colour swatches and the starter labels
     spaces.js         the two work areas
     files.js          attachment storage (disk / browser / memory)
@@ -469,7 +653,8 @@ js/
     dnd.js            dragging and resizing, incl. board lists
     chips.js          the three task visuals
     preview.js        thumbnails and file preview
-    checklist.js      the task list inside a card
+    checklist.js      the task list inside a card, groups and all
+    cardpanel.js      the Notes / Task list / Files tabs
     labels.js         client labels: stripes, picker, editor
     hover.js          the preview shown on resting a task
     archive.js        finished work, put away

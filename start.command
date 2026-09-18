@@ -2,25 +2,21 @@
 # ============================================================
 #  Organizer — double-click this file to launch the app.
 #
-#  It runs server.py, which serves this folder to your own
-#  machine only (127.0.0.1) and saves your tasks and imported
-#  files straight into this folder. Nothing is uploaded
-#  anywhere and nothing is installed.
+#  The same app Organizer.app opens, with a Terminal window
+#  behind it. Keep that window open while you work; closing
+#  it quits the app. If you'd rather not have it, use
+#  Organizer.app instead — it needs no Terminal at all.
 #
-#  Close this Terminal window to quit.
+#  It runs launch.py, which starts server.py: this folder,
+#  served to this machine only (127.0.0.1), saving your tasks
+#  and imported files straight back into it. Nothing is
+#  uploaded anywhere and nothing is installed.
+#
+#  For an ordinary browser tab instead of a window, run it
+#  from Terminal with:   ./start.command --tab
 # ============================================================
 
 cd "$(dirname "$0")" || exit 1
-
-PORT=8777
-URL="http://localhost:$PORT/"
-
-# Already running from an earlier launch? Just open a tab.
-if lsof -i ":$PORT" -sTCP:LISTEN >/dev/null 2>&1; then
-  echo "Organizer is already running."
-  open "$URL"
-  exit 0
-fi
 
 if ! command -v python3 >/dev/null 2>&1; then
   echo
@@ -33,6 +29,11 @@ if ! command -v python3 >/dev/null 2>&1; then
   exit 1
 fi
 
-# server.py opens the browser itself once the socket is listening, so there
-# is no race to sleep through.
-exec python3 server.py "$PORT"
+# No port or already-running checks here any more: launch.py finds a free
+# port itself, and notices when this folder is already being served — which
+# it can do properly by asking the server which folder it's serving.
+#
+# -u so the lines below appear as they happen. Python holds its output back
+# when it isn't writing to a terminal, and this is sometimes launched where
+# it isn't, which made a working launcher look like a hung one.
+exec python3 -u launch.py "$@"

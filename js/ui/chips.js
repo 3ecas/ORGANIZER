@@ -74,10 +74,13 @@ ORG.ui = (() => {
    * rather than showing steps finished last week.
    */
   function stepWindow(t, max){
-    if (t.steps.length <= max) return { rows:t.steps, hidden:0 };
-    const next = Math.max(0, t.steps.findIndex(s => !s.done));
-    const from = Math.min(next, t.steps.length - max);
-    return { rows:t.steps.slice(from, from + max), hidden:t.steps.length - max };
+    /* leaves, not entries: a folder is a heading, not a thing to do, and a
+       card is a summary of the work rather than of the filing */
+    const all = ORG.store.leaves(t);
+    if (all.length <= max) return { rows:all, hidden:0 };
+    const next = Math.max(0, all.findIndex(s => !s.done));
+    const from = Math.min(next, all.length - max);
+    return { rows:all.slice(from, from + max), hidden:all.length - max };
   }
 
   function stepRow(t, s){
@@ -100,9 +103,8 @@ ORG.ui = (() => {
 
   /** Progress bar plus the next few steps. Null when there are none. */
   function miniList(t, max = 6){
-    if (!t.steps.length) return null;
-
     const { done, total } = ORG.store.progress(t);
+    if (!total) return null;
     const all = done === total;
     const box = U.el("div", "card-steps");
 
@@ -135,20 +137,29 @@ ORG.ui = (() => {
   function whenText(t, short){
     if (!t.date) return short ? "No date" : "Not on the calendar";
 
-    const d = U.parseYmd(t.date);
-    const day = short
-      ? `${U.DOW[U.dowMon(d)]} ${d.getDate()} ${U.MON_SHORT[d.getMonth()]}`
-      : `${U.DOW[U.dowMon(d)]} ${d.getDate()} ${U.MON_SHORT[d.getMonth()]}`;
+    const stamp = key => {
+      const d = U.parseYmd(key);
+      return `${d.getDate()} ${U.MON_SHORT[d.getMonth()]}`;
+    };
+    const named = key => {
+      const d = U.parseYmd(key);
+      return `${U.DOW[U.dowMon(d)]} ${stamp(key)}`;
+    };
 
+    /* running across days */
     if (t.endDate){
-      const e = U.parseYmd(t.endDate);
-      const span = `${d.getDate()} ${U.MON_SHORT[d.getMonth()]} – ${e.getDate()} ${U.MON_SHORT[e.getMonth()]}`;
-      return short ? span : `${span}  ·  ${ORG.store.spanDays(t)} days, all day`;
+      const span = `${stamp(t.date)} – ${stamp(t.endDate)}`;
+      if (!t.start) return short ? span : `${span}  ·  ${ORG.store.spanDays(t)} days, all day`;
+      return short
+        ? `${span} · ${t.start}`
+        : `${stamp(t.date)} ${t.start} – ${stamp(t.endDate)} ${t.end}  ·  ${ORG.store.spanDays(t)} days`;
     }
-    if (!t.start) return short ? `${day} · all day` : `${day}  ·  all day`;
 
-    const end = U.fmtMin(Math.min(U.parseTime(t.start) + t.dur, 1439));
-    return short ? `${day} · ${t.start}` : `${day}  ·  ${t.start} – ${end}`;
+    /* one day */
+    if (!t.start) return short ? `${named(t.date)} · all day` : `${named(t.date)}  ·  all day`;
+    return short
+      ? `${named(t.date)} · ${t.start}`
+      : `${named(t.date)}  ·  ${t.start} – ${t.end}`;
   }
 
   /** Small paperclip shown when a task has attachments. */

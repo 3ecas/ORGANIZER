@@ -134,7 +134,7 @@ ORG.hover = (() => {
     if (pills.children.length) wrap.append(pills);
 
     /* --- what's left to do --- */
-    if (t.steps.length) wrap.append(checklist(t));
+    if (ORG.store.progress(t).total) wrap.append(checklist(t));
 
     /* --- notes --- */
     if (t.notes.trim()){
@@ -167,16 +167,18 @@ ORG.hover = (() => {
     top.append(bar, U.el("span", "hc-count", `${done}/${total}`));
     box.append(top);
 
-    /* same window as the board card: start at the first thing not done */
-    const next = Math.max(0, t.steps.findIndex(s => !s.done));
-    const from = Math.min(next, Math.max(0, t.steps.length - STEPS));
-    for (const s of t.steps.slice(from, from + STEPS)){
+    /* same window as the board card: leaves only, starting at the first
+       thing not done */
+    const all = ORG.store.leaves(t);
+    const next = Math.max(0, all.findIndex(s => !s.done));
+    const from = Math.min(next, Math.max(0, all.length - STEPS));
+    for (const s of all.slice(from, from + STEPS)){
       const row = U.el("div", "hc-step" + (s.done ? " on" : ""));
       row.append(U.el("span", "tick", s.done ? "✓" : "○"));
       row.append(U.el("span", "tx", s.text || "Untitled step"));
       box.append(row);
     }
-    const hidden = t.steps.length - Math.min(STEPS, t.steps.length - from);
+    const hidden = all.length - Math.min(STEPS, all.length - from);
     if (hidden > 0) box.append(U.el("div", "hc-more", `+${hidden} more`));
 
     return box;

@@ -82,14 +82,20 @@ ORG.views = ORG.views || {};
     const g = G();
     return {
       week: false,
+      key: U.ymd(days[0]),
       slots: Array.from({ length:g.span() }, (_, i) => ({ hour:g.dayStart() + i })),
       slotW: HOUR_W,
-      /** minutes past the first drawn hour, in slot units */
-      place(t){
+      /** the stretch of THIS day it occupies, in slot units */
+      place(t, keys){
         const base = g.dayStart() * 60;
-        if (!t.start) return { s:0, e:g.span() };          // all day fills the row
-        const s = (U.parseTime(t.start) - base) / 60;
-        return { s, e:s + (t.dur || 60) / 60 };
+        const on = ORG.store.spanOnDay(t, keys[0]);
+        if (!on) return null;
+        /* a job that began yesterday starts at the left edge, and one that
+           ends tomorrow runs off the right — clamped to the hours drawn */
+        return {
+          s: Math.max(0, (on.from - base) / 60),
+          e: Math.min(g.span(), (on.to - base) / 60),
+        };
       },
     };
   }
@@ -304,8 +310,13 @@ ORG.views = ORG.views || {};
        reads as a different, empty lane and puts text where another bar
        may already be — what doesn't fit is cut short instead. */
 
-    /* a handle at each end — this is the stretching he wanted */
-    for (const side of ["w", "e"]){
+    /* A handle at each end — but only where that end actually is. Looking
+       at Thursday of a Wednesday-to-Friday job, neither edge is here, and
+       a grip that silently did nothing would be worse than none. */
+    const ends = ax.week
+      ? ["w", "e"]
+      : [ax.key === t.date && "w", ax.key === ORG.store.lastDay(t) && "e"].filter(Boolean);
+    for (const side of ends){
       const g = U.el("div", "tlbar-grip " + side);
       g.addEventListener("pointerdown", e => ORG.dnd.beginStretch(e, t, n, side, ax.week));
       n.append(g);
@@ -324,7 +335,12 @@ ORG.views = ORG.views || {};
   function whenLabel(t, ax){
     if (!ax.week){
       if (!t.start) return "all day";
-      return `${t.start}–${U.fmtMin(Math.min(U.parseTime(t.start) + t.dur, 1439))}`;
+      /* on a day in the middle of a run there's no edge to name */
+      const first = ax.key === t.date, last = ax.key === ORG.store.lastDay(t);
+      if (first && last) return `${t.start}–${t.end}`;
+      if (first) return `from ${t.start}`;
+      if (last)  return `until ${t.end}`;
+      return "all day";
     }
     if (t.endDate) return `${ORG.store.spanDays(t)} days`;
     if (!t.start) return "all day";

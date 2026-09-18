@@ -1,0 +1,30 @@
+#!/bin/bash
+# ============================================================
+#  Organizer — the double-click.
+#
+#  Finds the folder this .app is sitting in, hands over to
+#  launch.py, and stays out of the way. No Terminal window,
+#  and no Dock icon of its own: the window you get IS the app,
+#  and quitting that stops the server behind it.
+#
+#  This file is the whole application. If it ever stops
+#  working, start.command still opens the app in a browser.
+# ============================================================
+
+# Contents/MacOS/Organizer -> Contents/MacOS -> Contents -> Organizer.app -> the folder
+cd "$(dirname "$0")/../../.." || exit 1
+
+PY="$(command -v python3 || true)"
+
+if [ -z "$PY" ]; then
+  osascript -e 'display alert "Organizer needs python3" message "It is not installed on this Mac yet.
+
+Open Terminal and run:
+
+    xcode-select --install
+
+Accept the install, then try again."' >/dev/null 2>&1
+  exit 1
+fi
+
+exec "$PY" launch.py

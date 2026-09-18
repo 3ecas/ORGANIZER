@@ -350,12 +350,25 @@ class Handler(SimpleHTTPRequestHandler):
 # ============================================================
 #  ENTRY POINT
 # ============================================================
-def main():
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8777
+def build(port: int) -> ThreadingHTTPServer:
+    """The server, listening and ready to serve.
+
+    Split out of main() so launch.py can run it on a thread and own its
+    lifetime itself — there it stops when the window is quit, rather than
+    when a Terminal window is closed.
+    """
     for space in SPACES:
         os.makedirs(os.path.join(FILES_DIR, space), exist_ok=True)
+    return ThreadingHTTPServer(("127.0.0.1", port), Handler)
 
-    server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+
+def main():
+    # Anything starting with a dash is a flag, not the port — otherwise
+    # `server.py --no-browser` reads one as the other and won't start.
+    args = [a for a in sys.argv[1:] if not a.startswith("-")]
+    port = int(args[0]) if args else 8777
+
+    server = build(port)
     free = shutil.disk_usage(ROOT).free / 1024 ** 3
 
     # The socket is listening the moment the server is constructed, so the

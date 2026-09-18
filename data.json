@@ -8,14 +8,14 @@
       "subtitle": "",
       "notes": "",
       "date": "2026-09-16",
-      "endDate": "2026-09-26",
-      "start": null,
-      "dur": 540,
-      "due": "2026-09-16",
+      "endDate": null,
+      "start": "17:00",
+      "end": "19:00",
+      "due": "2026-09-17",
       "label": "pitch",
-      "done": false,
-      "status": "doing",
-      "order": 0,
+      "done": true,
+      "status": "done",
+      "order": 2,
       "pin": {
         "x": 0,
         "y": 0
@@ -29,12 +29,12 @@
         {
           "id": "vwd8tfa3065",
           "text": "CARTAO HOMEM DO JOGO",
-          "done": false
+          "done": true
         },
         {
           "id": "6d0lq1b31nv",
           "text": "ASSINATURA",
-          "done": false
+          "done": true
         },
         {
           "id": "dm4kegy33s4",
@@ -44,7 +44,7 @@
         {
           "id": "4y0andj5pbn",
           "text": "ANIMAÇÃO AUDIO",
-          "done": false
+          "done": true
         },
         {
           "id": "ntyw1cj60yw",
@@ -53,9 +53,9 @@
         }
       ],
       "files": [],
-      "archivedAt": 0,
+      "archivedAt": 1789644283953,
       "createdAt": 1789496578987,
-      "updatedAt": 1789570213337
+      "updatedAt": 1789644283953
     },
     {
       "id": "1i01zzj7mup",
@@ -63,15 +63,15 @@
       "title": "WORTEN",
       "subtitle": "LEGENDAS JORGE BRITO",
       "notes": "",
-      "date": null,
+      "date": "2026-09-16",
       "endDate": null,
-      "start": null,
-      "dur": 60,
+      "start": "15:00",
+      "end": "16:00",
       "due": null,
       "label": "hy3ojq8cme1",
       "done": true,
       "status": "done",
-      "order": 0,
+      "order": 4,
       "pin": {
         "x": 5,
         "y": 0
@@ -80,12 +80,12 @@
         "w": 1,
         "h": 1
       },
-      "lane": null,
+      "lane": 1,
       "steps": [],
       "files": [],
-      "archivedAt": 0,
+      "archivedAt": 1789644300604,
       "createdAt": 1789552262257,
-      "updatedAt": 1789567719122
+      "updatedAt": 1789644300604
     },
     {
       "id": "syebhwo8glm",
@@ -95,13 +95,13 @@
       "notes": "",
       "date": "2026-09-16",
       "endDate": null,
-      "start": "09:00",
-      "dur": 120,
+      "start": "17:00",
+      "end": "19:00",
       "due": null,
       "label": "wd1gwccbx5c",
-      "done": false,
-      "status": "doing",
-      "order": 3,
+      "done": true,
+      "status": "done",
+      "order": 1,
       "pin": {
         "x": 4,
         "y": 0
@@ -110,12 +110,12 @@
         "w": 1,
         "h": 1
       },
-      "lane": 2,
+      "lane": 1,
       "steps": [],
       "files": [],
-      "archivedAt": 0,
+      "archivedAt": 1789663878740,
       "createdAt": 1789552300810,
-      "updatedAt": 1789570309731
+      "updatedAt": 1789663864356
     },
     {
       "id": "2zkkdge8s3q",
@@ -123,10 +123,10 @@
       "title": "PITCH",
       "subtitle": "EP 18",
       "notes": "",
-      "date": null,
+      "date": "2026-09-17",
       "endDate": null,
-      "start": null,
-      "dur": 60,
+      "start": "10:00",
+      "end": "19:00",
       "due": null,
       "label": "0ujthbxcf2b",
       "done": false,
@@ -140,18 +140,153 @@
         "w": 1,
         "h": 1
       },
-      "lane": null,
+      "lane": 3,
       "steps": [
         {
-          "id": "rgi6h92i8mt",
-          "text": "ORACULO FERA (WHATSAPP)",
-          "done": false
+          "id": "g0m0m74ve3g",
+          "text": "CASE AEG",
+          "folder": true,
+          "open": true,
+          "children": [
+            {
+              "id": "wnhfhn6vzx8",
+              "text": "PALAVRAS",
+              "done": true
+            },
+            {
+              "id": "0ejbpeyw39a",
+              "text": "ORACULO",
+              "done": true
+            },
+            {
+              "id": "ty7ijomw5vw",
+              "text": "SEPARADOR",
+              "done": true
+            },
+            {
+              "id": "x1sy21bwefu",
+              "text": "DROP",
+              "done": true
+            }
+          ]
+        },
+        {
+          "id": "4vsssuhwm66",
+          "text": "MOP",
+          "folder": true,
+          "open": true,
+          "children": [
+            {
+              "id": "cv3lvb6wprq",
+              "text": "PALAVRAS",
+              "done": true
+            },
+            {
+              "id": "dwy0nsvwt2g",
+              "text": "ORACULO",
+              "done": true
+            },
+            {
+              "id": "t0am22twv0j",
+              "text": "SEPARADOR",
+              "done": true
+            },
+            {
+              "id": "hx1208bwwq4",
+              "text": "DROP",
+              "done": true
+            }
+          ]
+        },
+        {
+          "id": "not7enmmoj6",
+          "text": "CONTINENTE",
+          "folder": true,
+          "open": true,
+          "children": [
+            {
+              "id": "gwhcxdfms57",
+              "text": "PALAVRAS",
+              "done": true
+            },
+            {
+              "id": "q7tx2u9mvrq",
+              "text": "ORACULO",
+              "done": true
+            },
+            {
+              "id": "ps7muavmwol",
+              "text": "SEPARADOR",
+              "done": true
+            },
+            {
+              "id": "9vqxj5xmydi",
+              "text": "DROP",
+              "done": true
+            }
+          ]
+        },
+        {
+          "id": "shj31rux3sc",
+          "text": "99 INSPIRAÇÃO",
+          "folder": true,
+          "open": true,
+          "children": [
+            {
+              "id": "1ccdxrvx7ix",
+              "text": "CAIXA",
+              "done": true
+            },
+            {
+              "id": "ahehly2xaon",
+              "text": "ORACULO",
+              "done": true
+            },
+            {
+              "id": "cug20dcxnj4",
+              "text": "PALAVRAS",
+              "done": true
+            }
+          ]
+        },
+        {
+          "id": "gxs7idek3ts",
+          "text": "GRAFISMOS",
+          "folder": true,
+          "open": true,
+          "children": [
+            {
+              "id": "atgilykkzni",
+              "text": "GENERICO",
+              "done": true
+            },
+            {
+              "id": "4rg3l0wl20z",
+              "text": "FICHA TECNICA",
+              "done": true
+            },
+            {
+              "id": "gne1nm0l5jo",
+              "text": "CARROSSEL",
+              "done": true
+            },
+            {
+              "id": "7eck0pel8qo",
+              "text": "HORARIO",
+              "done": true
+            },
+            {
+              "id": "bftfhmblkvb",
+              "text": "FINAL",
+              "done": true
+            }
+          ]
         }
       ],
       "files": [],
       "archivedAt": 0,
       "createdAt": 1789552315718,
-      "updatedAt": 1789566825253
+      "updatedAt": 1789664740491
     },
     {
       "id": "8lrrdd6970w",
@@ -159,15 +294,15 @@
       "title": "CRF",
       "subtitle": "VERSÃO JAPONESA",
       "notes": "",
-      "date": null,
+      "date": "2026-09-16",
       "endDate": null,
-      "start": null,
-      "dur": 60,
-      "due": null,
+      "start": "18:00",
+      "end": "22:30",
+      "due": "2026-09-17",
       "label": "client-a",
-      "done": false,
-      "status": "doing",
-      "order": 1,
+      "done": true,
+      "status": "done",
+      "order": 0,
       "pin": {
         "x": 2,
         "y": 0
@@ -176,12 +311,12 @@
         "w": 1,
         "h": 1
       },
-      "lane": null,
+      "lane": 3,
       "steps": [],
       "files": [],
-      "archivedAt": 0,
+      "archivedAt": 1789663878740,
       "createdAt": 1789552335056,
-      "updatedAt": 1789566829514
+      "updatedAt": 1789663866624
     },
     {
       "id": "hte6z6iep4v",
@@ -191,13 +326,13 @@
       "notes": "",
       "date": "2026-09-16",
       "endDate": null,
-      "start": "14:00",
-      "dur": 60,
+      "start": "16:00",
+      "end": "17:00",
       "due": "2026-09-16",
       "label": "f2877fnf7zo",
-      "done": false,
-      "status": "doing",
-      "order": 4,
+      "done": true,
+      "status": "done",
+      "order": 3,
       "pin": {
         "x": 1,
         "y": 0
@@ -211,18 +346,18 @@
         {
           "id": "owmc6xoyuap",
           "text": "CARTAO LOGOS 9X16",
-          "done": false
+          "done": true
         },
         {
           "id": "82xzwsazd6t",
           "text": "ELEMENTOS 9X16",
-          "done": false
+          "done": true
         }
       ],
       "files": [],
-      "archivedAt": 0,
+      "archivedAt": 1789644297108,
       "createdAt": 1789552591807,
-      "updatedAt": 1789567977061
+      "updatedAt": 1789644297108
     },
     {
       "id": "4ff5ojdjpdt",
@@ -233,12 +368,12 @@
       "date": null,
       "endDate": null,
       "start": null,
-      "dur": 60,
+      "end": null,
       "due": null,
       "label": "hy3ojq8cme1",
       "done": true,
       "status": "done",
-      "order": 1,
+      "order": 5,
       "pin": null,
       "span": {
         "w": 1,
@@ -378,10 +513,21 @@
     "lastDated": "day",
     "hideDone": false,
     "sidebar": true,
-    "dayStart": 7,
-    "dayEnd": 23
+    "dayStart": 8,
+    "dayEnd": 22,
+    "cardOrder": [
+      "steps",
+      "notes",
+      "files"
+    ],
+    "cardTab": "steps",
+    "cardOpen": {
+      "notes": true,
+      "steps": true,
+      "files": true
+    }
   },
-  "rev": 371,
+  "rev": 673,
   "savedBy": "MOTION-DEBORA",
-  "savedAt": 1789570309916
+  "savedAt": 1789664740689
 }

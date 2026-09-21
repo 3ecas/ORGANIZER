@@ -154,6 +154,65 @@ Nothing more is written from that machine until you reload, so the other
 computer's work stays intact. **Export** takes a backup of whatever is on screen
 first, so you can put it back by hand if you'd made changes worth keeping.
 
+### Through GitHub instead: the ⇅ button
+
+If the folder travels between machines through GitHub rather than a synced
+drive, the **⇅ button** in the top bar does the passing-along.
+
+- **Get** brings in what the other computer sent. It happens **by itself** when
+  you open Organizer and when you come back to the window: if nothing here is in
+  the way, the new work comes in and the page reloads onto it. Automatic on
+  purpose — working on top of old data is how both computers end up changing the
+  same thing.
+- **Send** commits what changed here and pushes it. It **never** happens by
+  itself. Press it before you quit.
+
+The button tells you where things stand without being opened:
+
+| On the button | Means |
+|---|---|
+| a number | that many changes here, not sent yet — the thing to check before quitting |
+| blue dot | the other computer sent something |
+| amber dot | it needs you: a sign-in, a restart, a Get before a Send |
+| red dot | both computers changed the same thing, or `data.json` is damaged |
+
+**What it refuses to do.**
+
+- **Combine two versions of the same file.** If both computers changed
+  `data.json`, neither button acts. Git would stitch the two versions together
+  line by line and could leave something that isn't valid JSON at all. The panel
+  names the file; GitHub Desktop can pull and ask which version to keep.
+- **Send a `data.json` it can't read.** A merge that stopped half-way leaves
+  marks in the file, and sending it would pass the damage to the other machine.
+  If the app opens onto an unreadable `data.json`, it shows a red bar, saves
+  nothing, and leaves the file exactly as it is for you to put right.
+- **Send files of 95 MB or more.** GitHub refuses anything from 100 MB, and
+  committing one would block every Send after it. They stay on the machine they
+  were added on, and the panel lists them. Renders and masters are the usual
+  ones — keep those outside Organizer and attach a still or a web cut.
+- **Reload onto a server that's out of date.** When a Get brings in changes to
+  Organizer's own server, it says so and asks you to quit and reopen.
+
+**Signing in, once per computer.** The buttons run git themselves, and git keeps
+its own login, separate from GitHub Desktop's. Until it has one, the panel says
+*Sign-in needed*. To give it one:
+
+1. On github.com: **Settings → Developer settings → Personal access tokens →
+   Fine-grained tokens → Generate new token**. Give it access to **only** the
+   ORGANIZER repository, with **Contents: Read and write**. Copy the token.
+2. Open Terminal in the ORGANIZER folder (on the PC, a Command Prompt) and run
+   `git push`.
+3. Username: your GitHub username. Password: paste the token.
+
+macOS keeps it in the Keychain, Windows in its Credential Manager, and the
+buttons work from then on. Nothing ever waits on a password prompt — Organizer
+usually runs with no Terminal to type into, so git is told never to ask.
+
+**Keep the repository private.** This folder holds client work: names, notes,
+schedules, attachments, and every earlier version of each. A public repository
+shows all of it to anyone who looks. On github.com: the repository → **Settings
+→ General → Danger Zone → Change visibility → Private**.
+
 ### Worth knowing
 
 - **Attachments count against your sync quota.** A folder of ProRes masters will
@@ -625,6 +684,7 @@ desktop/
 start.command         the same window, with a Terminal behind it
 start.bat             the same, for Windows
 server.py             serves the folder and handles saving to disk
+sync.py               the GitHub buttons: Get and Send, and what they refuse
 css/
   tokens.css          colours, spacing, light/dark themes
   base.css            buttons, inputs, toggles, pills
@@ -640,6 +700,7 @@ css/
   labels.css          the client-label picker
   hover.css           the hover preview
   sheet.css           the archive and keyboard overlays
+  sync.css            the GitHub button and its panel
 js/
   core/
     util.js           dates, formatting, colour maths, event bus
@@ -655,6 +716,7 @@ js/
     preview.js        thumbnails and file preview
     checklist.js      the task list inside a card, groups and all
     cardpanel.js      the Notes / Task list / Files tabs
+    sync.js           the GitHub button: Get, Send, and the count before quitting
     labels.js         client labels: stripes, picker, editor
     hover.js          the preview shown on resting a task
     archive.js        finished work, put away
@@ -675,8 +737,17 @@ js/
 `server.py` binds to `127.0.0.1` only, so nothing outside the machine running it
 can reach it — which is why it needs no password. Syncing the folder does not
 change that: each computer still talks only to its own copy.
-It exposes five endpoints — read and write `data.json`, save a file, move a file
-between folders, delete a file — and nothing else. Names coming from the browser
+
+Other *machines* are kept out by that; other *web pages* are not. Any site open
+in your browser can send requests to a port on your own computer. So the server
+also checks every request: it must call the server by its own address (which
+stops a hostile site pointing a domain of its own at `127.0.0.1` and reading
+`data.json`), and anything that changes something must come from Organizer's own
+page. That mattered once files could be moved about, and matters more now that a
+single request can commit and push to GitHub.
+
+It exposes read and write for `data.json`, saving, moving and deleting a file,
+and the three GitHub calls — status, Get, Send — and nothing else. Names coming from the browser
 are stripped of any directory part, space and project names are flattened to a
 single safe folder name each, and every path is checked to resolve inside
 `FILES/`, so a request can never read or write outside that folder.

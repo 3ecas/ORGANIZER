@@ -346,6 +346,7 @@ ORG.app = (() => {
     wire("Previews",  () => ORG.hover.init());
     wire("Labels",    () => ORG.labels.initMenu());
     wire("Archive",   () => ORG.archive.init());
+    wire("GitHub",    () => ORG.sync.init());
     wire("Shortcuts", () => ORG.shortcuts.init());
     wire("Sidebar",   applySidebar);
     wire("Topbar",    wireTopbar);

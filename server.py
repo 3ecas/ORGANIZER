@@ -12,6 +12,11 @@ browser:
     POST   /api/files?name=…&space=…&project=…  save an imported file
     POST   /api/files/relocate?path=…&…       move a file to another folder
     DELETE /api/files?path=…                  remove a saved file
+    GET    /api/sync?fetch=1                  where this folder stands with GitHub
+    POST   /api/sync/get                      bring in what the other computer sent
+    POST   /api/sync/send                     commit and push what changed here
+
+Only this server's own pages may use any of it — see Handler.allowed().
 
 Imported files are copied into a folder per work area, then per project:
 
@@ -36,6 +41,8 @@ import time
 import webbrowser
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs, unquote
+
+import sync
 
 ROOT       = os.path.dirname(os.path.abspath(__file__))
 FILES_DIR  = os.path.join(ROOT, "FILES")
@@ -127,6 +134,23 @@ def read_state() -> dict:
         return {}
 
 
+def disk_is_junk() -> bool:
+    """data.json is there but isn't JSON — usually a merge left half-done.
+
+    Not the same as the file being absent. Absent means a first run, and a
+    first run writes a fresh file. Writing a fresh file over a damaged one
+    would destroy the only copy that could still be put right.
+    """
+    if not os.path.exists(DATA_FILE):
+        return False
+    try:
+        with open(DATA_FILE, "r", encoding="utf-8") as fh:
+            json.load(fh)
+        return False
+    except (OSError, ValueError):
+        return True
+
+
 def prune_empty(folder: str):
     """Tidy away a project folder once its last file is gone.
 
@@ -180,8 +204,51 @@ class Handler(SimpleHTTPRequestHandler):
     def log_message(self, fmt, *args):
         pass  # keep the Terminal window readable
 
+    # ---------- who may ask ----------
+    def allowed(self) -> bool:
+        """Only this app's own pages, calling this server by its own name.
+
+        Listening on 127.0.0.1 keeps other MACHINES out, but not other web
+        pages: any site open in the browser can send requests to a port on
+        this computer. Two checks close that.
+
+          Host    must be this server's own address. A hostile site can
+                  point a domain of its own at 127.0.0.1 and then read
+                  everything here as if it were its own page — data.json
+                  included. What it can't do is make the browser send
+                  THIS server's name as the Host.
+
+          Origin  on anything that changes something, must be this server.
+                  A page elsewhere can fire a request here blind, but the
+                  browser labels it with where it came from. That mattered
+                  before — files could be moved about — and matters more
+                  now that one request can commit and push to GitHub.
+        """
+        port = self.server.server_address[1]
+        mine = {f"127.0.0.1:{port}", f"localhost:{port}"}
+        if (self.headers.get("Host") or "").lower() not in mine:
+            return False
+        if self.command in ("GET", "HEAD"):
+            return True
+        origin = (self.headers.get("Origin") or "").lower()
+        if origin and origin not in {f"http://{h}" for h in mine}:
+            return False
+        return (self.headers.get("Sec-Fetch-Site") or "").lower() != "cross-site"
+
+    def refuse(self):
+        return self.send_json({"error": "refused: this server only answers its own pages"}, 403)
+
+    def do_HEAD(self):
+        if not self.allowed():
+            self.send_response(403)
+            self.end_headers()
+            return
+        return super().do_HEAD()
+
     # ---------- GET ----------
     def do_GET(self):
+        if not self.allowed():
+            return self.refuse()
         route = urlparse(self.path).path
 
         if route == "/api/ping":
@@ -199,12 +266,23 @@ class Handler(SimpleHTTPRequestHandler):
         if route == "/api/whoami":
             return self.send_json({"device": DEVICE})
 
+        if route == "/api/sync":
+            return self.send_json(sync.status(fetch=self.param("fetch") == "1"))
+
         return super().do_GET()
 
     # ---------- PUT ----------
     def do_PUT(self):
+        if not self.allowed():
+            return self.refuse()
         if urlparse(self.path).path != "/api/state":
             return self.send_json({"error": "unknown endpoint"}, 404)
+
+        # A damaged data.json is the one thing never to write over — see
+        # disk_is_junk(). 423 rather than 409: nobody saved first, the file
+        # is broken, and the app says so differently.
+        if disk_is_junk():
+            return self.send_json({"error": "unreadable"}, 423)
 
         length = self.body_length()
         if length <= 0 or length > 64 * 1024 * 1024:
@@ -257,11 +335,17 @@ class Handler(SimpleHTTPRequestHandler):
 
     # ---------- POST ----------
     def do_POST(self):
+        if not self.allowed():
+            return self.refuse()
         route = urlparse(self.path).path
         if route == "/api/files":
             return self.save_upload()
         if route == "/api/files/relocate":
             return self.relocate()
+        if route == "/api/sync/get":
+            return self.send_json(sync.get())
+        if route == "/api/sync/send":
+            return self.send_json(sync.send(DEVICE))
         return self.send_json({"error": "unknown endpoint"}, 404)
 
     def save_upload(self):
@@ -326,6 +410,8 @@ class Handler(SimpleHTTPRequestHandler):
 
     # ---------- DELETE ----------
     def do_DELETE(self):
+        if not self.allowed():
+            return self.refuse()
         if urlparse(self.path).path != "/api/files":
             return self.send_json({"error": "unknown endpoint"}, 404)
 

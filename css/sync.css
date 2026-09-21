@@ -1,0 +1,74 @@
+/* ============================================================
+   sync.css
+   The GitHub button in the top bar, and the panel under it.
+
+   The button says where things stand without being opened:
+     a count     changes here not sent yet  (the thing to check before quitting)
+     a blue dot  the other computer sent something
+     amber       needs you: a sign-in, a restart, a Get before a Send
+     red         both computers changed the same thing
+   ============================================================ */
+
+.syncmenu{position:relative}
+
+.syncdot{
+  position:absolute;top:3px;right:3px;
+  width:6px;height:6px;border-radius:99px;
+  box-shadow:0 0 0 2px var(--panel);
+  display:none;
+}
+#syncbtn[data-tone="get"]    .syncdot{display:block;background:var(--accent)}
+#syncbtn[data-tone="warn"]   .syncdot{display:block;background:var(--warn)}
+#syncbtn[data-tone="danger"] .syncdot{display:block;background:var(--danger)}
+
+/* Turning while it talks to GitHub. Quick checks happen on every return to
+   the window, so it's kept slow and small rather than insistent. */
+#syncbtn[data-tone="busy"] svg{animation:sync-turn 1.4s linear infinite}
+@keyframes sync-turn{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){
+  #syncbtn[data-tone="busy"] svg{animation:none;opacity:.55}
+}
+
+/* ---------- the panel ---------- */
+.syncpanel{
+  position:absolute;top:calc(100% + 8px);right:0;z-index:50;
+  width:284px;padding:12px;
+  background:var(--panel);border:1px solid var(--line-2);border-radius:12px;
+  box-shadow:var(--shadow);
+  /* It lives inside the top bar, which keeps everything on one line.
+     Sentences in here need to wrap, or they run straight off the edge. */
+  white-space:normal;text-align:left;
+}
+.syncpanel[hidden]{display:none}
+
+.sp-word{
+  margin-left:auto;padding:2px 8px;border-radius:99px;
+  font-size:10.5px;font-weight:600;letter-spacing:0;text-transform:none;
+  background:var(--panel-2);color:var(--muted);
+}
+.sp-word[data-tone="ok"]    {color:var(--ok)}
+.sp-word[data-tone="get"],
+.sp-word[data-tone="send"]  {color:var(--accent);background:var(--accent-soft)}
+.sp-word[data-tone="warn"]  {color:var(--warn)}
+.sp-word[data-tone="danger"]{color:var(--danger)}
+
+.sp-line{
+  margin:0 0 11px;
+  font-size:12px;line-height:1.45;color:var(--muted);
+}
+
+.sp-acts{display:flex;gap:6px}
+.sp-acts .btn{flex:1;justify-content:center}
+.sp-acts .btn:disabled{opacity:.4;cursor:default}
+
+.sp-files{
+  margin:11px 0 0;padding:0 0 0 14px;
+  font-size:11px;line-height:1.6;color:var(--muted);
+}
+.sp-warn{margin:9px 0 0;font-size:11px;line-height:1.45;color:var(--warn)}
+
+.sp-foot{
+  margin-top:11px;padding-top:9px;border-top:1px solid var(--line);
+  font-size:10.5px;color:var(--faint);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}

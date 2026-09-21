@@ -6,3 +6,7 @@ __pycache__/
 
 # macOS scatters these through synced folders and they help nobody.
 .DS_Store
+
+# Claude Code's settings for this folder. Machine-specific paths, and
+# nothing the other computer should receive when you press Send.
+.claude/

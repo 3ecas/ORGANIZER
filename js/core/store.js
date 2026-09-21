@@ -23,6 +23,8 @@ ORG.store = (() => {
      readDisk/persistNow below. */
   let diskRev = 0;
   let stale = null;          // { savedBy, savedAt } once we've been overtaken
+  let broken = null;         // why data.json can't be read, when it can't
+  let saving = 0;            // writes in flight — see ORG.sync
 
   /* ============================================================
      MODEL
@@ -545,16 +547,26 @@ ORG.store = (() => {
     }));
   }
 
-  /** data.json, via server.py. Null when there's nothing usable there. */
+  /** data.json, via server.py. Null when there's nothing usable there.
+
+      Two very different kinds of nothing. No file yet is a first run.
+      A file that's there but won't parse — a merge left half-done, a sync
+      interrupted — sets `broken`, because the caller must then write
+      NOTHING: a fresh file over a damaged one destroys the only copy that
+      could still be put right. That used to be exactly what happened. */
   async function readDisk(){
+    let res;
+    try { res = await fetch("/api/state"); }
+    catch(e){ console.warn("Could not reach the server.", e); return null; }
+
     try {
-      const res = await fetch("/api/state");
       const raw = await res.json();
       if (!res.ok || raw.error) throw new Error(raw.error || res.status);
       diskRev = +raw.rev || 0;          // what we must still match to save
       return Array.isArray(raw.tasks) ? raw : null;
     } catch(e){
       console.warn("Could not read data.json.", e);
+      broken = String(e.message || e);
       return null;
     }
   }
@@ -574,6 +586,19 @@ ORG.store = (() => {
       const disk = await readDisk();
       if (disk){ state = hydrate(disk); return state; }
 
+      if (broken){
+        /* Show an empty app, save nothing, and let the banner explain.
+           persistNow refuses while `broken` is set.
+           Empty, NOT defaults() as it stands: that seeds sample jobs for a
+           first run, and a calendar full of plausible-looking work — while
+           nothing is saving — is the last thing to show someone whose
+           real file just failed to open. */
+        state = defaults();
+        state.tasks = [];
+        setSaved("Not saved — data.json can't be read", true);
+        return state;
+      }
+
       /* First run against the folder. Carry over anything the browser
          was holding so switching to disk doesn't look like data loss,
          then write it out immediately so the move sticks. */
@@ -592,8 +617,9 @@ ORG.store = (() => {
     if (ORG.files.onDisk){
       /* Once another device has overtaken us, every further write would
          only widen the gap. Stop until the page is reloaded. */
-      if (stale) return;
+      if (stale || broken) return;
 
+      saving++;
       try {
         const res = await fetch(`/api/state?rev=${diskRev}`, {
           method: "PUT",
@@ -601,6 +627,15 @@ ORG.store = (() => {
           body: JSON.stringify(state),
         });
         const out = await res.json();
+
+        if (res.status === 423){
+          /* data.json went bad underneath us while this was open — the
+             server won't write over it, and nor will we try again. */
+          broken = "data.json can't be read";
+          setSaved("Not saved — data.json can't be read", true);
+          U.bus.emit("broken");
+          return;
+        }
 
         if (res.status === 409){
           stale = { savedBy: out.savedBy, savedAt: out.savedAt };
@@ -615,6 +650,8 @@ ORG.store = (() => {
       } catch(e){
         console.error("Write failed", e);
         setSaved("Not saved — check Terminal", true);
+      } finally {
+        saving--;
       }
       return;
     }
@@ -1144,6 +1181,12 @@ ORG.store = (() => {
     get storageOK(){ return storageOK; },
     /** Set once a synced copy of data.json has moved past the one we loaded. */
     get stale(){ return stale; },
+    /** Why data.json couldn't be read, if it couldn't. Nothing saves then. */
+    get broken(){ return broken; },
+    /** The revision we loaded or last wrote — what the disk should still say. */
+    get diskRev(){ return diskRev; },
+    /** True while a write is on its way, or waiting out the debounce. */
+    get busy(){ return saving > 0 || persist.pending(); },
     VERSION, KEY,
     load, save, setSaved, replaceState, defaults, normalizeTask, hydrate,
     byId, visible, live, tasksOn, covers, spanDays, lastDay, spanOnDay, durationOf,

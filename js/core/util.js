@@ -131,8 +131,14 @@ ORG.util = (() => {
 
   /* ---------- misc ---------- */
   const debounce = (fn, ms) => {
-    let t;
-    return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+    let t = null;
+    const run = (...a) => {
+      clearTimeout(t);
+      t = setTimeout(() => { t = null; fn(...a); }, ms);
+    };
+    /** Is a call still waiting to happen? */
+    run.pending = () => t !== null;
+    return run;
   };
 
   let toastTimer;

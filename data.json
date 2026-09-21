@@ -15,7 +15,7 @@
       "label": "pitch",
       "done": true,
       "status": "done",
-      "order": 2,
+      "order": 3,
       "pin": {
         "x": 0,
         "y": 0
@@ -71,7 +71,7 @@
       "label": "hy3ojq8cme1",
       "done": true,
       "status": "done",
-      "order": 4,
+      "order": 5,
       "pin": {
         "x": 5,
         "y": 0
@@ -101,7 +101,7 @@
       "label": "wd1gwccbx5c",
       "done": true,
       "status": "done",
-      "order": 1,
+      "order": 2,
       "pin": {
         "x": 4,
         "y": 0
@@ -129,9 +129,9 @@
       "end": "19:00",
       "due": null,
       "label": "0ujthbxcf2b",
-      "done": false,
-      "status": "doing",
-      "order": 2,
+      "done": true,
+      "status": "done",
+      "order": 0,
       "pin": {
         "x": 3,
         "y": 0
@@ -284,9 +284,9 @@
         }
       ],
       "files": [],
-      "archivedAt": 0,
+      "archivedAt": 1789985915309,
       "createdAt": 1789552315718,
-      "updatedAt": 1789664740491
+      "updatedAt": 1789985913510
     },
     {
       "id": "8lrrdd6970w",
@@ -302,7 +302,7 @@
       "label": "client-a",
       "done": true,
       "status": "done",
-      "order": 0,
+      "order": 1,
       "pin": {
         "x": 2,
         "y": 0
@@ -332,7 +332,7 @@
       "label": "f2877fnf7zo",
       "done": true,
       "status": "done",
-      "order": 3,
+      "order": 4,
       "pin": {
         "x": 1,
         "y": 0
@@ -373,7 +373,7 @@
       "label": "hy3ojq8cme1",
       "done": true,
       "status": "done",
-      "order": 5,
+      "order": 6,
       "pin": null,
       "span": {
         "w": 1,
@@ -385,6 +385,74 @@
       "archivedAt": 1789567757949,
       "createdAt": 1789554505025,
       "updatedAt": 1789567757949
+    },
+    {
+      "id": "vjszkndf9gu",
+      "space": "work",
+      "title": "PITCH",
+      "subtitle": "EP 19",
+      "notes": "",
+      "date": "2026-09-21",
+      "endDate": "2026-09-24",
+      "start": null,
+      "end": null,
+      "due": "2026-09-24",
+      "label": "0ujthbxcf2b",
+      "done": false,
+      "status": "doing",
+      "order": 0,
+      "pin": {
+        "x": 0,
+        "y": 0
+      },
+      "span": {
+        "w": 1,
+        "h": 1
+      },
+      "lane": 0,
+      "steps": [
+        {
+          "id": "0nxjeoaink8",
+          "text": "CASE 1",
+          "folder": true,
+          "open": true,
+          "children": [
+            {
+              "id": "kk5bfzjj47a",
+              "text": "PALAVRAS",
+              "done": false
+            },
+            {
+              "id": "zkymnkhj6ul",
+              "text": "DROP",
+              "done": false
+            },
+            {
+              "id": "nr3o5scj8ta",
+              "text": "SEPARADOR",
+              "done": false
+            },
+            {
+              "id": "8bh5vuijft5",
+              "text": "ORACULOS",
+              "done": false
+            }
+          ]
+        }
+      ],
+      "files": [
+        {
+          "id": "79rsw0fhd1q",
+          "at": 1789986057038,
+          "name": "Screenshot 2026-09-21 at 11.20.16.png",
+          "size": 3019974,
+          "type": "image/png",
+          "path": "FILES/Work/PITCH/Screenshot 2026-09-21 at 11.20.16.png"
+        }
+      ],
+      "archivedAt": 0,
+      "createdAt": 1789985959086,
+      "updatedAt": 1789986275461
     }
   ],
   "labels": [
@@ -509,8 +577,8 @@
   "settings": {
     "theme": "dark",
     "space": "work",
-    "view": "day",
-    "lastDated": "day",
+    "view": "todo",
+    "lastDated": "week",
     "hideDone": false,
     "sidebar": true,
     "dayStart": 8,
@@ -527,7 +595,7 @@
       "files": true
     }
   },
-  "rev": 673,
+  "rev": 748,
   "savedBy": "MOTION-DEBORA",
-  "savedAt": 1789664740689
+  "savedAt": 1789986286731
 }

@@ -15,6 +15,8 @@ browser:
     GET    /api/sync?fetch=1                  where this folder stands with GitHub
     POST   /api/sync/get                      bring in what the other computer sent
     POST   /api/sync/send                     commit and push what changed here
+    POST   /api/sync/login    {token}         store a GitHub token for git, once it's proven
+    POST   /api/open          {url}           open a github.com page in your usual browser
 
 Only this server's own pages may use any of it — see Handler.allowed().
 
@@ -43,6 +45,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs, unquote
 
 import sync
+from desktop import window
 
 ROOT       = os.path.dirname(os.path.abspath(__file__))
 FILES_DIR  = os.path.join(ROOT, "FILES")
@@ -201,6 +204,17 @@ class Handler(SimpleHTTPRequestHandler):
         except ValueError:
             return 0
 
+    def small_json(self, limit=4096) -> dict:
+        """A short JSON body, or {} — for the calls that carry one field."""
+        length = self.body_length()
+        if length <= 0 or length > limit:
+            return {}
+        try:
+            got = json.loads(self.rfile.read(length).decode("utf-8"))
+            return got if isinstance(got, dict) else {}
+        except (ValueError, UnicodeDecodeError):
+            return {}
+
     def log_message(self, fmt, *args):
         pass  # keep the Terminal window readable
 
@@ -267,7 +281,9 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_json({"device": DEVICE})
 
         if route == "/api/sync":
-            return self.send_json(sync.status(fetch=self.param("fetch") == "1"))
+            return self.send_json({**sync.status(fetch=self.param("fetch") == "1",
+                                                 fresh=self.param("fresh") == "1"),
+                                   "device": DEVICE})
 
         return super().do_GET()
 
@@ -346,7 +362,23 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_json(sync.get())
         if route == "/api/sync/send":
             return self.send_json(sync.send(DEVICE))
+        if route == "/api/sync/login":
+            # The token passes straight through to git's credential store.
+            # It is never logged here, and never sent back.
+            return self.send_json(sync.login(self.small_json().get("token", "")))
+        if route == "/api/open":
+            return self.open_link(self.small_json().get("url", ""))
         return self.send_json({"error": "unknown endpoint"}, 404)
+
+    def open_link(self, url: str):
+        """Open a github.com page in your usual browser. github.com and
+        nothing else: a way to make this computer open arbitrary links is
+        not something to leave lying about, even behind allowed()."""
+        parts = urlparse(str(url or ""))
+        if parts.scheme != "https" or parts.netloc != "github.com":
+            return self.send_json({"error": "refused: only github.com pages"}, 400)
+        window.open_everyday(url)
+        return self.send_json({"ok": True})
 
     def save_upload(self):
         length = self.body_length()

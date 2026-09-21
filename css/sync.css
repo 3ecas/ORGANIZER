@@ -57,6 +57,27 @@
   font-size:12px;line-height:1.45;color:var(--muted);
 }
 
+/* ---------- the one-time steps: go private, then sign in ---------- */
+.sp-steps{display:flex;flex-direction:column;gap:12px;margin:0 0 14px}
+.sp-step{display:flex;gap:9px;align-items:flex-start}
+.sp-num{
+  flex:0 0 18px;height:18px;margin-top:4px;border-radius:99px;
+  display:grid;place-items:center;
+  background:var(--panel-2);color:var(--muted);font-size:10.5px;font-weight:650;
+}
+.sp-body{flex:1;min-width:0}
+.sp-steps > .btn, .sp-body > .btn{width:100%;justify-content:center}
+.sp-hint{margin:6px 0 0;font-size:11px;line-height:1.45;color:var(--faint)}
+
+.sp-paste{display:flex;gap:6px}
+.sp-token{
+  flex:1;min-width:0;height:28px;padding:0 9px;
+  border:1px solid var(--line-2);border-radius:8px;
+  background:var(--panel-2);color:var(--text);font:inherit;font-size:12px;
+}
+.sp-token:focus{outline:none;border-color:var(--accent)}
+.sp-token:disabled{opacity:.5}
+
 .sp-acts{display:flex;gap:6px}
 .sp-acts .btn{flex:1;justify-content:center}
 .sp-acts .btn:disabled{opacity:.4;cursor:default}

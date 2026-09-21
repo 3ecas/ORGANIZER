@@ -193,25 +193,39 @@ The button tells you where things stand without being opened:
 - **Reload onto a server that's out of date.** When a Get brings in changes to
   Organizer's own server, it says so and asks you to quit and reopen.
 
-**Signing in, once per computer.** The buttons run git themselves, and git keeps
-its own login, separate from GitHub Desktop's. Until it has one, the panel says
-*Sign-in needed*. To give it one:
+**First: the repository must be private.** This folder holds client work —
+names, notes, schedules, attachments, and every earlier version of each — and a
+public repository shows all of it to anyone who looks. Send won't send to a
+public one: it asks GitHub, without logging in, what a stranger can see, and
+stops if the answer is everything. The panel turns red and says so, with a
+button to the repository's settings on GitHub. Right at the bottom, under
+**Danger Zone: Change visibility → Make private**. Come back to Organizer and
+it notices within a few seconds.
 
-1. On github.com: **Settings → Developer settings → Personal access tokens →
-   Fine-grained tokens → Generate new token**. Give it access to **only** the
-   ORGANIZER repository, with **Contents: Read and write**. Copy the token.
-2. Open Terminal in the ORGANIZER folder (on the PC, a Command Prompt) and run
-   `git push`.
-3. Username: your GitHub username. Password: paste the token.
+**Then: sign in, once per computer.** The buttons run git themselves, and git
+keeps its own login, separate from GitHub Desktop's. Until it has one, the
+panel says *Sign-in needed* and shows two steps, right there:
 
-macOS keeps it in the Keychain, Windows in its Credential Manager, and the
-buttons work from then on. Nothing ever waits on a password prompt — Organizer
-usually runs with no Terminal to type into, so git is told never to ask.
+1. **Open GitHub's token page.** It opens in your usual browser, where you're
+   already signed in to GitHub, with nearly everything filled in: named after
+   this computer, one year, **Contents: Read and write**, nothing else. The one
+   choice a link can't make is the repository — under *Repository access*,
+   choose **Only select repositories** and pick **ORGANIZER**. Generate the
+   token and copy it. GitHub shows it only once.
+2. **Paste it into the panel and press Sign in.**
 
-**Keep the repository private.** This folder holds client work: names, notes,
-schedules, attachments, and every earlier version of each. A public repository
-shows all of it to anyone who looks. On github.com: the repository → **Settings
-→ General → Danger Zone → Change visibility → Private**.
+Before keeping it, Organizer checks it with GitHub, then proves it can send to
+this repository with a dry run that sends nothing. A token that can't do the job
+is thrown away rather than stored half-working, and the panel says what to fix.
+A good one goes where git keeps logins — the Keychain on a Mac, the Credential
+Manager on Windows — and nowhere else: never into the folder, never into a log.
+
+Nothing ever waits on a password prompt. Organizer usually runs with no
+Terminal to type into, so git is told never to ask. When the token expires in a
+year, the panel says *Sign-in needed* again; the same two steps fix it.
+
+On a PC with only GitHub Desktop and no git of its own, there may be nowhere to
+keep a login — the panel says so. Installing Git for Windows fixes that.
 
 ### Worth knowing
 

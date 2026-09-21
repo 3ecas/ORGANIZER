@@ -38,9 +38,13 @@ ORG.sync = (() => {
   /* ============================================================
      TALKING TO THE SERVER
      ============================================================ */
-  async function call(path, method = "GET"){
+  async function call(path, method = "GET", body){
     let res;
-    try { res = await fetch(path, { method }); }
+    try {
+      res = await fetch(path, body === undefined ? { method } : {
+        method, headers:{ "Content-Type":"application/json" }, body:JSON.stringify(body),
+      });
+    }
     catch { return { git:false, reason:"server" }; }
     /* 404 means the server running now predates this file: the page was
        reloaded onto new code, but the server wasn't restarted. */
@@ -63,13 +67,38 @@ ORG.sync = (() => {
   const toSend = s => s.changed.length || s.ahead;
   const diverged = s => s.behind > 0 && (s.ahead > 0 || s.clash.length > 0);
 
-  const LOGIN = onWindows
-    ? "This PC needs signing in to GitHub once. Open a Command Prompt in the "
-      + "Organizer folder and run  git push . The README has the steps."
-    : "This Mac needs signing in to GitHub once. Open Terminal in the "
-      + "Organizer folder and run  git push . The README has the steps.";
+  /* ============================================================
+     LINKS TO GITHUB
+     ============================================================ */
 
-  /** { tone, word, line } for the current state. */
+  /** GitHub's page for a new token, filled in as far as a link can fill it.
+      Only the repository itself can't be chosen from a link — so the steps
+      say which box to tick. Contents: read and write is all it gets, for
+      one year, and it's named after this computer so the two are easy to
+      tell apart if one ever needs cancelling. */
+  function tokenUrl(){
+    const [owner, name] = (st.repo || "/").split("/");
+    const device = st.device || "this computer";
+    const q = new URLSearchParams({
+      name: `Organizer on ${device}`.slice(0, 40),
+      description: `Lets Organizer on ${device} get and send ${name}. Nothing else.`,
+      target_name: owner,
+      expires_in: "366",
+      contents: "write",
+    });
+    return `https://github.com/settings/personal-access-tokens/new?${q}`;
+  }
+
+  /** Open a github.com page in the browser you normally use, where you're
+      signed in to GitHub — not in this window, which is a Firefox profile
+      of its own, signed in to nothing. The server does the opening; if it
+      can't (it predates this), fall back to a new window here. */
+  async function openOnGitHub(url){
+    const r = await call("/api/open", "POST", { url });
+    if (!r.ok) window.open(url, "_blank", "noopener");
+  }
+
+  /** { tone, word, line, kind } for the current state. */
   function reading(){
     if (busy === "get")  return { tone:"busy", word:"Getting…", line:"Bringing in what the other computer sent." };
     if (busy === "send") return { tone:"busy", word:"Sending…", line:"Committing and pushing what changed here." };
@@ -93,7 +122,15 @@ ORG.sync = (() => {
       line:"data.json is damaged, so nothing will be sent — sending it would pass the damage "
         + "to the other computer. Put it right in GitHub Desktop first, then reload." };
 
-    if (st.error === "login")   return { tone:"warn", word:"Sign-in needed", line:LOGIN };
+    /* Before anything else that could lead to a Send: while strangers can
+       read the repository, nothing goes to it. The server refuses too —
+       this is only the explanation. */
+    if (st.public) return { tone:"danger", word:"Public", kind:"public",
+      line:`Anyone can read ${st.repo || "this repository"} — your tasks, notes and attachments. `
+        + "Nothing will be sent until it's private." };
+
+    if (st.error === "login") return { tone:"warn", word:"Sign-in needed", kind:"login",
+      line:"Git on this computer isn't signed in to GitHub yet. Once, and it's done:" };
     if (st.error === "offline") return { tone:"off",  word:"Offline",
       line:"Couldn't reach GitHub. Nothing is lost — try again once you're online." };
     if (st.error === "behind")  return { tone:"warn", word:"Get first",
@@ -152,18 +189,24 @@ ORG.sync = (() => {
 
     panel.append(U.el("p", "sp-line", note || r.line));
 
-    const acts = U.el("div", "sp-acts");
-    const get = U.el("button", "btn sm", "↓ Get");
-    get.title = "Bring in what the other computer sent";
-    get.disabled = !!busy || !st || !st.git;
-    get.addEventListener("click", () => doGet(false));
+    if (r.kind === "public") panel.append(goPrivate());
+    if (r.kind === "login")  panel.append(signIn());
 
-    const send = U.el("button", "btn sm primary", "↑ Send");
-    send.title = "Commit what changed here and push it to GitHub";
-    send.disabled = !!busy || !st || !st.git || !st.canSend;
-    send.addEventListener("click", doSend);
-    acts.append(get, send);
-    panel.append(acts);
+    // Signing in comes first; the buttons would only fail the same way.
+    if (r.kind !== "login"){
+      const acts = U.el("div", "sp-acts");
+      const get = U.el("button", "btn sm", "↓ Get");
+      get.title = "Bring in what the other computer sent";
+      get.disabled = !!busy || !st || !st.git;
+      get.addEventListener("click", () => doGet(false));
+
+      const send = U.el("button", "btn sm primary", "↑ Send");
+      send.title = "Commit what changed here and push it to GitHub";
+      send.disabled = !!busy || !st || !st.git || !st.canSend || r.kind === "public";
+      send.addEventListener("click", doSend);
+      acts.append(get, send);
+      panel.append(acts);
+    }
 
     // What's waiting, in plain words. Not while data.json is damaged: a
     // list of things "to send" under "Can't send" reads like a promise.
@@ -186,14 +229,107 @@ ORG.sync = (() => {
     }
   }
 
+  /** Step one of two: make the repository private. */
+  function goPrivate(){
+    const box = U.el("div", "sp-steps");
+    const open = U.el("button", "btn sm", "Open its settings on GitHub");
+    open.addEventListener("click", () => openOnGitHub(`https://github.com/${st.repo}/settings`));
+    box.append(open);
+    box.append(U.el("p", "sp-hint",
+      "Right at the bottom, under Danger Zone: Change visibility → Make private. "
+      + "Come back here afterwards and it's noticed within a few seconds."));
+    return box;
+  }
+
+  /* Step two: sign git in. The field survives a redraw — coming back from
+     the browser redraws this panel, and that must not throw away a token
+     just pasted. The draft lives here only until it's sent, then goes. */
+  let draft = "";
+  let signing = false;
+  let signTrouble = null;
+
+  function signIn(){
+    const box = U.el("div", "sp-steps");
+    const name = (st.repo || "").split("/")[1] || "this repository";
+
+    const one = U.el("div", "sp-step");
+    const oneBody = U.el("div", "sp-body");
+    const open = U.el("button", "btn sm", "Open GitHub's token page");
+    open.addEventListener("click", () => openOnGitHub(tokenUrl()));
+    oneBody.append(open, U.el("p", "sp-hint",
+      `It opens in your usual browser. Under Repository access, choose Only select `
+      + `repositories and pick ${name} — everything else is already filled in. `
+      + `Generate the token and copy it.`));
+    one.append(U.el("span", "sp-num", "1"), oneBody);
+
+    const two = U.el("div", "sp-step");
+    const twoBody = U.el("div", "sp-body");
+    const row = U.el("div", "sp-paste");
+    const input = U.el("input", "sp-token");
+    input.type = "password";
+    input.placeholder = "Paste the token here";
+    input.autocomplete = "off";
+    input.spellcheck = false;
+    input.value = draft;
+    input.disabled = signing;
+    input.addEventListener("input", () => { draft = input.value; });
+
+    const go = U.el("button", "btn sm primary", signing ? "Checking…" : "Sign in");
+    go.disabled = signing;
+    const submit = async () => {
+      const token = draft.trim();
+      if (!token || signing) return;
+      signing = true;
+      signTrouble = null;
+      paint();
+      const r = await call("/api/sync/login", "POST", { token });
+      draft = "";                          // gone from the page either way
+      signing = false;
+      if (r.ok){
+        await check();
+        note = `Signed in as ${r.user}. Send works from now on.`;
+      } else {
+        signTrouble = trouble(r, name);
+      }
+      paint();
+    };
+    go.addEventListener("click", submit);
+    input.addEventListener("keydown", e => { if (e.key === "Enter") submit(); });
+    row.append(input, go);
+    twoBody.append(row);
+    if (signTrouble) twoBody.append(U.el("p", "sp-warn", signTrouble));
+    two.append(U.el("span", "sp-num", "2"), twoBody);
+
+    box.append(one, two);
+    if (!signing) setTimeout(() => { if (draft) input.focus(); }, 0);
+    return box;
+  }
+
+  function trouble(r, name){
+    if (r.reason === "old-server")
+      return "Quit and reopen Organizer first — the server running now is older than this form.";
+    switch (r.why){
+      case "shape":    return "That doesn't look like a GitHub token — it should start with github_pat_. Copy it again.";
+      case "rejected": return "GitHub doesn't recognise that token. It's only shown once; if it's lost, make another.";
+      case "no-write": return `GitHub knows the token, but it can't send to ${name}. Check that you picked `
+                            + `Only select repositories → ${name}, and that Contents says Read and write.`;
+      case "offline":  return "Couldn't reach GitHub. Try again once you're online.";
+      case "no-store": return onWindows
+        ? "Git on this PC has nowhere to keep a login. Installing Git for Windows (git-scm.com) adds one; then sign in again."
+        : "The Keychain wouldn't take it. Try once more.";
+      case "not-github": return "This folder's repository isn't on GitHub.";
+      default: return r.detail || "That didn't work. Try again.";
+    }
+  }
+
   /* ============================================================
      DOING IT
      ============================================================ */
-  async function check(){
+  async function check(fresh){
     if (busy) return st;
     busy = "check";
     paint();
-    st = await call("/api/sync?fetch=1");
+    st = await call(`/api/sync?fetch=1${fresh ? "&fresh=1" : ""}`);
     lastCheck = Date.now();
     busy = null;
     note = null;
@@ -272,8 +408,8 @@ ORG.sync = (() => {
   }
 
   /** Ask GitHub, and bring in whatever's safe to. */
-  async function refresh(){
-    await check();
+  async function refresh(fresh){
+    await check(fresh);
     if (!st || !st.git || st.error || !st.canGet) return;
 
     /* A reload that lands straight back here and Gets again would loop
@@ -318,8 +454,13 @@ ORG.sync = (() => {
     U.bus.on("change", recount);
     showBroken();
 
+    /* Coming back to the window: ask again. Sooner while the repository is
+       public — the likeliest reason for being away is making it private,
+       and the panel should move on as soon as that's done. */
     const again = () => {
-      if (document.visibilityState === "visible" && Date.now() - lastCheck > RECHECK) refresh();
+      if (document.visibilityState !== "visible") return;
+      const watching = !!(st && st.public);
+      if (Date.now() - lastCheck > (watching ? 10 * 1000 : RECHECK)) refresh(watching);
     };
     window.addEventListener("focus", again);
     document.addEventListener("visibilitychange", again);

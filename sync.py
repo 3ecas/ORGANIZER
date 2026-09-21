@@ -27,6 +27,11 @@ WHAT IT WILL NOT DO
     left out of a Send and named. Committing one would put it into a
     history that could then never be pushed, and every Send after it
     would fail for a reason that had nothing to do with that Send.
+
+    Nothing is sent to a PUBLIC repository. This folder holds client work,
+    and the repository sat public for a week before anyone noticed. Send
+    asks GitHub, anonymously, whether a stranger can see it, and refuses
+    if so. Making it private is the fix, and the only one.
 """
 
 import glob
@@ -37,6 +42,8 @@ import shutil
 import subprocess
 import threading
 import time
+import urllib.error
+import urllib.request
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 
@@ -135,6 +142,147 @@ def _why(err: str) -> str:
 
 
 # ============================================================
+#  WHICH REPOSITORY, AND WHO CAN SEE IT
+# ============================================================
+API = "https://api.github.com"
+
+
+def _remote() -> str:
+    """The remote this branch sends to — 'origin', almost always."""
+    code, up, _ = _git("rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}")
+    return up.strip().split("/", 1)[0] if code == 0 and up.strip() else "origin"
+
+
+def repo():
+    """(host, owner, name) of the GitHub repository behind this folder, or None."""
+    code, url, _ = _git("remote", "get-url", _remote())
+    if code != 0:
+        return None
+    m = re.match(r"^(?:https://(?:[^@/]+@)?|ssh://git@|git@)(github\.com)[/:]"
+                 r"([A-Za-z0-9-]+)/([A-Za-z0-9._-]+?)(?:\.git)?/?$", url.strip())
+    return m.groups() if m else None
+
+
+def _api(path: str, token: str = None):
+    """(status, body) from GitHub's API; (0, {}) when it couldn't be reached."""
+    headers = {"User-Agent": "Organizer", "Accept": "application/vnd.github+json"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    try:
+        with urllib.request.urlopen(urllib.request.Request(API + path, headers=headers),
+                                    timeout=15) as res:
+            return res.status, json.load(res)
+    except urllib.error.HTTPError as err:
+        return err.code, {}
+    except (urllib.error.URLError, OSError, ValueError):
+        return 0, {}
+
+
+_seen = {"at": 0.0, "public": None}
+
+
+def is_public(fresh: bool = False):
+    """True if anyone at all can read the repository. None if it couldn't tell.
+
+    Asked anonymously — no login goes with it — because the question is
+    exactly what a stranger sees. A private repository answers them 404,
+    as though it didn't exist.
+
+    A "private" answer is trusted for ten minutes, a "public" one for one,
+    so the app notices soon after the switch is made. GitHub allows sixty
+    of these questions an hour; this asks a handful.
+    """
+    if not fresh:
+        hold = 600 if _seen["public"] is False else 60
+        if time.time() - _seen["at"] < hold:
+            return _seen["public"]
+    found = repo()
+    if not found:
+        return None
+    code, body = _api(f"/repos/{found[1]}/{found[2]}")
+    public = (not body.get("private", True)) if code == 200 else (False if code == 404 else None)
+    _seen.update(at=time.time(), public=public)
+    return public
+
+
+# ============================================================
+#  SIGNING IN
+# ============================================================
+# What a GitHub token looks like: ghp_…, github_pat_…, gho_…. Checking the
+# shape also means nothing with a line break in it can reach git's
+# credential store, where a line break would start a field of its own.
+TOKEN_SHAPE = re.compile(r"[A-Za-z0-9_]{20,255}")
+
+
+def _helpers() -> list:
+    return [h for h in _git("config", "--get-all", "credential.helper")[1].splitlines() if h.strip()]
+
+
+def _credential(action: str, host: str, user: str, secret: str) -> int:
+    """Give a login to git's own store — the Keychain on a Mac, Windows'
+    Credential Manager on a PC — or take one back out.
+
+    Through stdin, never the command line: anything running on the machine
+    can read another program's command line.
+    """
+    git = find_git()
+    if not git:
+        return 127
+    env = dict(os.environ)
+    env["GIT_TERMINAL_PROMPT"] = "0"
+    extra = {"creationflags": subprocess.CREATE_NO_WINDOW} if os.name == "nt" else {}
+    feed = f"protocol=https\nhost={host}\nusername={user}\npassword={secret}\n\n"
+    try:
+        return subprocess.run([git, "-C", ROOT, "credential", action], input=feed, text=True,
+                              capture_output=True, env=env, timeout=LOCAL_SECONDS, **extra).returncode
+    except (subprocess.TimeoutExpired, OSError):
+        return 1
+
+
+def login(token: str) -> dict:
+    """Store a token for git, but only once it's proven it can send here.
+
+    The token is never written anywhere but git's credential store, never
+    logged, and never sent back to the page.
+    """
+    token = (token or "").strip()
+    if not TOKEN_SHAPE.fullmatch(token):
+        return {"ok": False, "why": "shape"}
+    found = repo()
+    if not found:
+        return {"ok": False, "why": "not-github"}
+    host = found[0]
+
+    # Ask GitHub who this is. A made-up or mistyped token fails here,
+    # before anything has been stored.
+    code, me = _api("/user", token)
+    if code == 0:
+        return {"ok": False, "why": "offline"}
+    user = me.get("login", "") if code == 200 else ""
+    if not re.fullmatch(r"[A-Za-z0-9-]{1,39}", user):
+        return {"ok": False, "why": "rejected"}
+
+    with _lock:
+        if not _helpers():
+            # Nowhere to keep it: git on this machine has no credential store.
+            return {"ok": False, "why": "no-store", "user": user}
+        if _credential("approve", host, user, token) != 0:
+            return {"ok": False, "why": "no-store", "user": user}
+
+        # Prove it can WRITE to this repository. A dry run asks GitHub for
+        # push access and sends nothing. "Rejected" here only means the
+        # other computer sent something first — the login itself worked.
+        code, _, err = _git("push", "--dry-run", "--quiet", timeout=NETWORK_SECONDS)
+        worked = code == 0 or any(s in err for s in ("rejected", "fetch first", "non-fast-forward"))
+        if not worked:
+            _credential("reject", host, user, token)     # don't keep one that can't do the job
+            kind = _why(err)
+            return {"ok": False, "why": "no-write" if kind == "login" else kind,
+                    "detail": _last_line(err), "user": user}
+    return {"ok": True, "user": user}
+
+
+# ============================================================
 #  WHAT'S CHANGED
 # ============================================================
 def _entries():
@@ -188,12 +336,12 @@ def _size(path: str) -> int:
 # ============================================================
 #  STATUS
 # ============================================================
-def status(fetch=False):
+def status(fetch=False, fresh=False):
     with _lock:
-        return _status(fetch)
+        return _status(fetch, fresh)
 
 
-def _status(fetch: bool) -> dict:
+def _status(fetch: bool, fresh: bool = False) -> dict:
     out = {"git": False}
 
     if not find_git():
@@ -243,9 +391,16 @@ def _status(fetch: bool) -> dict:
     out["incoming"] = incoming
     out["clash"] = sorted(edited_here & set(incoming))
 
+    found = repo()
+    out["repo"] = f"{found[1]}/{found[2]}" if found else None
+    # Whether strangers can read it: asked over the network only alongside
+    # a fetch, otherwise whatever the last answer was.
+    out["public"] = is_public(fresh) if fetch else _seen["public"]
+
     out["broken"] = not _data_ok()
     out["canGet"] = bool(behind) and not ahead and not out["clash"]
-    out["canSend"] = bool(out["changed"] or ahead) and not behind and not out["broken"]
+    out["canSend"] = (bool(out["changed"] or ahead) and not behind
+                      and not out["broken"] and not out["public"])
 
     code, head, _ = _git("log", "-1", "--format=%s%x00%ct", "@{u}")
     if code == 0 and "\0" in head:
@@ -313,6 +468,10 @@ def send(device: str) -> dict:
         st = _status(fetch=True)
         if not st.get("git") or st.get("error"):
             return {**st, "ok": False}
+        # Asked fresh, whatever the cache says: this is the last moment to
+        # stop client work going somewhere anyone can read it.
+        if is_public(fresh=True):
+            return {**st, "public": True, "canSend": False, "ok": False, "why": "public"}
         if st["broken"]:
             return {**st, "ok": False, "why": "broken"}
         if st["behind"]:

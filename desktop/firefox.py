@@ -72,6 +72,12 @@ PREFS = {
     # can't be clicked, so make sure it's never offered.
     "browser.sessionstore.resume_from_crash": False,
     "browser.tabs.warnOnClose": False,
+
+    # Nothing to remember here. The one password-like thing ever typed into
+    # this window is the GitHub token, and that belongs in the Keychain,
+    # where git put it — not in a browser profile as well. The offer would
+    # also hang off the hidden address bar, where it can't be answered.
+    "signon.rememberSignons": False,
 }
 
 # Firefox's own furniture, by name. Hidden rather than removed, because

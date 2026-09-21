@@ -400,7 +400,7 @@
       "label": "0ujthbxcf2b",
       "done": false,
       "status": "doing",
-      "order": 0,
+      "order": 1,
       "pin": {
         "x": 0,
         "y": 0
@@ -443,16 +443,52 @@
       "files": [
         {
           "id": "79rsw0fhd1q",
-          "at": 1789986057038,
           "name": "Screenshot 2026-09-21 at 11.20.16.png",
           "size": 3019974,
           "type": "image/png",
+          "at": 1789986057038,
           "path": "FILES/Work/PITCH/Screenshot 2026-09-21 at 11.20.16.png"
         }
       ],
       "archivedAt": 0,
       "createdAt": 1789985959086,
       "updatedAt": 1789986275461
+    },
+    {
+      "id": "hp6ky2871bs",
+      "space": "work",
+      "title": "WORTEN",
+      "subtitle": "Legendas Miguel Reis",
+      "notes": "",
+      "date": "2026-09-21",
+      "endDate": null,
+      "start": "11:30",
+      "end": "13:00",
+      "due": "2026-09-21",
+      "label": "hy3ojq8cme1",
+      "done": false,
+      "status": "doing",
+      "order": 0,
+      "pin": null,
+      "span": {
+        "w": 1,
+        "h": 1
+      },
+      "lane": null,
+      "steps": [],
+      "files": [
+        {
+          "id": "bace9ns8j0t",
+          "at": 1789987324493,
+          "name": "Screenshot 2026-09-21 at 11.41.51.png",
+          "size": 1195616,
+          "type": "image/png",
+          "path": "FILES/Work/WORTEN/Screenshot 2026-09-21 at 11.41.51.png"
+        }
+      ],
+      "archivedAt": 0,
+      "createdAt": 1789987254904,
+      "updatedAt": 1789987324527
     }
   ],
   "labels": [
@@ -577,7 +613,7 @@
   "settings": {
     "theme": "dark",
     "space": "work",
-    "view": "todo",
+    "view": "board",
     "lastDated": "week",
     "hideDone": false,
     "sidebar": true,
@@ -595,7 +631,7 @@
       "files": true
     }
   },
-  "rev": 748,
+  "rev": 774,
   "savedBy": "MOTION-DEBORA",
-  "savedAt": 1789986286731
+  "savedAt": 1789987334564
 }

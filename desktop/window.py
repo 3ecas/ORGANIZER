@@ -138,43 +138,6 @@ def _gone():
 
 
 # ============================================================
-#  OPENING A LINK SOMEWHERE ELSE
-# ============================================================
-def _default_is_firefox() -> bool:
-    """Is Firefox this Mac's default browser?"""
-    if sys.platform != "darwin":
-        return False
-    import plistlib
-    path = os.path.expanduser("~/Library/Preferences/com.apple.LaunchServices/"
-                              "com.apple.launchservices.secure.plist")
-    try:
-        with open(path, "rb") as fh:
-            handlers = plistlib.load(fh).get("LSHandlers", [])
-    except (OSError, ValueError, plistlib.InvalidFileException):
-        return False
-    return any(h.get("LSHandlerURLScheme") == "https"
-               and str(h.get("LSHandlerRoleAll", "")).lower() == "org.mozilla.firefox"
-               for h in handlers)
-
-
-def open_everyday(url: str) -> None:
-    """Open `url` in the browser you normally use — never in Organizer's window.
-
-    That matters for anything you sign in to. Organizer's window is a Firefox
-    profile of its own: signed in to nothing, with none of your saved
-    passwords. On a Mac, "the default browser" goes to whichever running copy
-    of it macOS picks — and when the default IS Firefox, that can be
-    Organizer's. Starting Firefox without naming a profile goes to your
-    everyday one instead: Firefox hands the link to it, or opens it.
-    """
-    browser = find_firefox() if _default_is_firefox() else None
-    if browser:
-        subprocess.Popen([browser, url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    else:
-        webbrowser.open(url)
-
-
-# ============================================================
 #  OPENING IT
 # ============================================================
 def open_window(url: str):

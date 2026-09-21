@@ -238,6 +238,8 @@ ORG.app = (() => {
       ORG.store.save();
     });
 
+    U.$("#reloadbtn").addEventListener("click", reloadApp);
+
     const search = U.$("#search");
     search.addEventListener("input", e => ORG.store.setQuery(e.target.value));
     search.addEventListener("keydown", e => {
@@ -302,6 +304,27 @@ ORG.app = (() => {
 
     U.$("#sync-reload").addEventListener("click", () => location.reload());
     U.$("#sync-export").addEventListener("click", () => ORG.backup.exportBundle());
+
+    /* data.json there but unreadable: nothing is saving, so say so for as
+       long as it lasts. It can be broken at load, or go bad while open. */
+    const broken = U.$("#brokenbanner");
+    broken.hidden = !ORG.store.broken;
+    U.bus.on("broken", () => { broken.hidden = false; });
+    U.$("#broken-reload").addEventListener("click", () => location.reload());
+  }
+
+  /** Reload from disk: whatever the folder holds right now, code and all.
+      For when something outside Organizer has changed it — GitHub Desktop,
+      a synced drive bringing in the other computer's work.
+
+      Waits for any save still on its way before reloading, or the last thing
+      typed would go with the page. Two seconds at most: a save that takes
+      longer than that isn't going to finish by waiting. */
+  async function reloadApp(){
+    for (let i = 0; i < 40 && ORG.store.busy; i++){
+      await new Promise(r => setTimeout(r, 50));
+    }
+    location.reload();
   }
 
   /**
@@ -346,7 +369,6 @@ ORG.app = (() => {
     wire("Previews",  () => ORG.hover.init());
     wire("Labels",    () => ORG.labels.initMenu());
     wire("Archive",   () => ORG.archive.init());
-    wire("GitHub",    () => ORG.sync.init());
     wire("Shortcuts", () => ORG.shortcuts.init());
     wire("Sidebar",   applySidebar);
     wire("Topbar",    wireTopbar);

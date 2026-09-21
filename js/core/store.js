@@ -24,7 +24,7 @@ ORG.store = (() => {
   let diskRev = 0;
   let stale = null;          // { savedBy, savedAt } once we've been overtaken
   let broken = null;         // why data.json can't be read, when it can't
-  let saving = 0;            // writes in flight — see ORG.sync
+  let saving = 0;            // writes in flight — the reload button waits for them
 
   /* ============================================================
      MODEL
@@ -1183,8 +1183,6 @@ ORG.store = (() => {
     get stale(){ return stale; },
     /** Why data.json couldn't be read, if it couldn't. Nothing saves then. */
     get broken(){ return broken; },
-    /** The revision we loaded or last wrote — what the disk should still say. */
-    get diskRev(){ return diskRev; },
     /** True while a write is on its way, or waiting out the debounce. */
     get busy(){ return saving > 0 || persist.pending(); },
     VERSION, KEY,

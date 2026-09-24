@@ -15,7 +15,7 @@
       "label": "pitch",
       "done": true,
       "status": "done",
-      "order": 3,
+      "order": 4,
       "pin": {
         "x": 0,
         "y": 0
@@ -71,7 +71,7 @@
       "label": "hy3ojq8cme1",
       "done": true,
       "status": "done",
-      "order": 5,
+      "order": 6,
       "pin": {
         "x": 5,
         "y": 0
@@ -101,7 +101,7 @@
       "label": "wd1gwccbx5c",
       "done": true,
       "status": "done",
-      "order": 2,
+      "order": 3,
       "pin": {
         "x": 4,
         "y": 0
@@ -131,7 +131,7 @@
       "label": "0ujthbxcf2b",
       "done": true,
       "status": "done",
-      "order": 0,
+      "order": 1,
       "pin": {
         "x": 3,
         "y": 0
@@ -302,7 +302,7 @@
       "label": "client-a",
       "done": true,
       "status": "done",
-      "order": 1,
+      "order": 2,
       "pin": {
         "x": 2,
         "y": 0
@@ -332,7 +332,7 @@
       "label": "f2877fnf7zo",
       "done": true,
       "status": "done",
-      "order": 4,
+      "order": 5,
       "pin": {
         "x": 1,
         "y": 0
@@ -373,7 +373,7 @@
       "label": "hy3ojq8cme1",
       "done": true,
       "status": "done",
-      "order": 6,
+      "order": 7,
       "pin": null,
       "span": {
         "w": 1,
@@ -392,11 +392,11 @@
       "title": "PITCH",
       "subtitle": "EP 19",
       "notes": "",
-      "date": "2026-09-21",
-      "endDate": "2026-09-24",
-      "start": null,
-      "end": null,
-      "due": "2026-09-24",
+      "date": "2026-09-23",
+      "endDate": "2026-09-25",
+      "start": "15:00",
+      "end": "13:00",
+      "due": "2026-09-25",
       "label": "0ujthbxcf2b",
       "done": false,
       "status": "doing",
@@ -413,7 +413,7 @@
       "steps": [
         {
           "id": "0nxjeoaink8",
-          "text": "CASE 1",
+          "text": "CASE 1 REPSOL: A MULTIENERGIA QUE NOS LIGA AO FUTURO",
           "folder": true,
           "open": true,
           "children": [
@@ -430,29 +430,104 @@
             {
               "id": "nr3o5scj8ta",
               "text": "SEPARADOR",
-              "done": false
+              "done": true
             },
             {
               "id": "8bh5vuijft5",
               "text": "ORACULOS",
+              "done": true
+            }
+          ]
+        },
+        {
+          "id": "c6gdusx1y6s",
+          "text": "CASE 2 APAP VERDADE SEJA DITA",
+          "folder": true,
+          "open": true,
+          "children": [
+            {
+              "id": "9ho6j6t2jpm",
+              "text": "PALAVRAS",
+              "done": false
+            },
+            {
+              "id": "fl4yekt2l83",
+              "text": "DROP",
+              "done": false
+            },
+            {
+              "id": "nol88jv2mmx",
+              "text": "SEPARADOR",
+              "done": true
+            },
+            {
+              "id": "20mcy3t2nqi",
+              "text": "ORACULOS",
+              "done": false
+            }
+          ]
+        },
+        {
+          "id": "lemxaia21hy",
+          "text": "INSIGHTS 3 | O FUTEBOL JÁ NÃO CABE NUM SÓ ECRÃ",
+          "folder": true,
+          "open": true,
+          "children": [
+            {
+              "id": "c4ssd9x2txg",
+              "text": "PALAVRAS",
+              "done": false
+            },
+            {
+              "id": "2sw506c2vwr",
+              "text": "DROP",
+              "done": false
+            },
+            {
+              "id": "6i134ts2wpw",
+              "text": "SEPARADOR",
+              "done": true
+            },
+            {
+              "id": "sqbq4qs2xsm",
+              "text": "ORACULOS",
+              "done": false
+            }
+          ]
+        },
+        {
+          "id": "k5oyn0424a1",
+          "text": "GENERICO | CARROSSEL | FICHA TÉCNICA | FINAL",
+          "folder": true,
+          "open": true,
+          "children": [
+            {
+              "id": "jlznmwq8ln7",
+              "text": "GENERICO",
+              "done": false
+            },
+            {
+              "id": "o0ig15s8nmi",
+              "text": "CARROSSEL",
+              "done": false
+            },
+            {
+              "id": "nh7b1pa8p7k",
+              "text": "FICHA TECNICA",
+              "done": false
+            },
+            {
+              "id": "qintanc8rnf",
+              "text": "FINAL",
               "done": false
             }
           ]
         }
       ],
-      "files": [
-        {
-          "id": "79rsw0fhd1q",
-          "name": "Screenshot 2026-09-21 at 11.20.16.png",
-          "size": 3019974,
-          "type": "image/png",
-          "at": 1789986057038,
-          "path": "FILES/Work/PITCH/Screenshot 2026-09-21 at 11.20.16.png"
-        }
-      ],
+      "files": [],
       "archivedAt": 0,
       "createdAt": 1789985959086,
-      "updatedAt": 1789986275461
+      "updatedAt": 1790185530363
     },
     {
       "id": "hp6ky2871bs",
@@ -460,50 +535,14 @@
       "title": "WORTEN",
       "subtitle": "Legendas Miguel Reis",
       "notes": "",
-      "date": "2026-09-21",
+      "date": null,
       "endDate": null,
-      "start": "11:30",
-      "end": "13:00",
-      "due": "2026-09-21",
+      "start": null,
+      "end": null,
+      "due": null,
       "label": "hy3ojq8cme1",
-      "done": false,
-      "status": "doing",
-      "order": 1,
-      "pin": null,
-      "span": {
-        "w": 1,
-        "h": 1
-      },
-      "lane": null,
-      "steps": [],
-      "files": [
-        {
-          "id": "bace9ns8j0t",
-          "name": "Screenshot 2026-09-21 at 11.41.51.png",
-          "size": 1195616,
-          "type": "image/png",
-          "at": 1789987324493,
-          "path": "FILES/Work/WORTEN/Screenshot 2026-09-21 at 11.41.51.png"
-        }
-      ],
-      "archivedAt": 0,
-      "createdAt": 1789987254904,
-      "updatedAt": 1789987324527
-    },
-    {
-      "id": "0ofl51siopy",
-      "space": "work",
-      "title": "TEST",
-      "subtitle": "TESET",
-      "notes": "",
-      "date": "2026-09-21",
-      "endDate": null,
-      "start": "09:00",
-      "end": "10:00",
-      "due": "2026-09-22",
-      "label": "delivered",
-      "done": false,
-      "status": "doing",
+      "done": true,
+      "status": "done",
       "order": 0,
       "pin": null,
       "span": {
@@ -514,8 +553,8 @@
       "steps": [],
       "files": [],
       "archivedAt": 0,
-      "createdAt": 1789989478054,
-      "updatedAt": 1789989505846
+      "createdAt": 1789987254904,
+      "updatedAt": 1790173591997
     }
   ],
   "labels": [
@@ -658,7 +697,7 @@
       "files": true
     }
   },
-  "rev": 787,
-  "savedBy": "MOTION-DEBORA",
-  "savedAt": 1789989506033
+  "rev": 871,
+  "savedBy": "MOTION-BERNIE",
+  "savedAt": 1790185531454
 }
